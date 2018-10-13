@@ -1,5 +1,6 @@
 import pandas as p
 import scipy as sp
+import scipy.sparse as sps
 import numpy as np
 
 class Data_manager:
@@ -35,9 +36,9 @@ class TopPop(object):
         return recommended
 
 def build():
-    datafile = np.loadtxt('../input/train.csv', delimiter=',', skiprows=1)
+    datafile = np.loadtxt('../../data/train.csv', delimiter=',', skiprows=1, dtype=int)
     userList, itemList = zip(*datafile)
-    ratings = np.ones(1211791)
+    ratings = np.ones(1211791, dtype=int)
     URM_all = sps.coo_matrix((ratings, (userList, itemList)))
     dm = Data_manager(URM_all)
     return  dm
@@ -46,3 +47,4 @@ dm = build()
 rec = TopPop()
 rec.fit(dm.getURM_COO())
 recommended = rec.recommend(1,10)
+print(recommended)
