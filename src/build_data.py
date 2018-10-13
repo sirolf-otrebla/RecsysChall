@@ -15,4 +15,8 @@ def build():
     return  dm
 
 
+def loadTarget():
+    t = p.DataFrame.from_csv('../data/target_playlists.csv')
+    return t.values
+
 
