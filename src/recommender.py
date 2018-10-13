@@ -19,8 +19,12 @@ class TopPop(object):
 
     def recommendAll(self, userList, at=10):
         res = np.array([])
+
         for i in userList:
             recList = self.recommend(i, 10)
-            tuple = np.concatenate((np.array([1]), recList), axis=0)
-            res = np.vstack([res, recList])
+            tuple = np.concatenate((i, recList))
+            if (res.size == 0):
+                res = tuple
+            else:
+                res = np.vstack([res, tuple])
         return res
