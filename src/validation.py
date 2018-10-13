@@ -2,11 +2,12 @@ import numpy as np
 
 class Validator(object):
 
-    _cumulative_precision = 0.0
-    _cumulative_recall = 0.0
-    _cumulative_MAP = 0.0
+    def __init__(self):
+        self._cumulative_precision = 0.0
+        self._cumulative_recall = 0.0
+        self._cumulative_MAP = 0.0
 
-    _num_eval = 0
+        self._num_eval = 0
 
     def MAP(self, recommended_items, relevant_items):
         is_relevant = np.in1d(recommended_items, relevant_items, assume_unique=True)
