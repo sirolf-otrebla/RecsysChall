@@ -3,7 +3,7 @@ from src import data
 from src import recommender as r
 import pandas
 
-dm = build_data.build()
+dm = build_data.build_urm()
 target = build_data.loadTarget()
 rec = r.TopPop()
 rec.fit(dm.getURM_COO())
