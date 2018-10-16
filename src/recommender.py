@@ -28,3 +28,23 @@ class TopPop(object):
             else:
                 res = np.vstack([res, tuple])
         return res
+
+
+class Knn(object):
+    def __init__(self, k):
+
+        self._k = k
+
+
+    def fit(self, URM_train):
+
+        d = 1
+
+    def recommend(self, user_ID, at = 10):
+
+        d = 1
+
+    def recommendALL(selfself, userList, at = 10):
+        d = 1
+
+
