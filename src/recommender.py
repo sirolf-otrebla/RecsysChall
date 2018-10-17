@@ -30,7 +30,7 @@ class TopPop(object):
         return res
 
 
-class Knn(object):
+class CBF_Item_Naive(object):
     def __init__(self, k):
 
         self._k = k
@@ -48,3 +48,4 @@ class Knn(object):
         d = 1
 
 
+class CBF_User_Naive(object):

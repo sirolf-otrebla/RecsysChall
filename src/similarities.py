@@ -23,9 +23,28 @@ class Cosine_Similarity(object):
         self._weighted_S = np.dot(self._S, w)
         return  self._weighted_S
 
-    def topK(self):
+    def topK(self, topK):
+
+        topk_matrix = []
+
         if (self._weighted_S != None):
             for row in range(self._weighted_S.shape[0]):
                 item_data = self.ICM[row, :]
                 item_data = item_data.toarray.squeeze()
 
+                # partition row placing at the k-th position element
+                # that would occupy that position in an ordered array.
+                # then, move all elements greater or equal than that
+                # to the left partition and elements smaller to the
+                # right partition. since we are interested only about
+                # the top k elements, e.g. the left part of the array
+                #  we want to select only those using [0:topK]
+
+                topK_items = row.argpartition(topK-1)[0:topK]
+
+                # now we want to order the topK_items we found before
+                # so that we can check the most similar items in order
+                topK_items_sorted = np.argsort(row[topK_items])
+                topk_matrix.append(topK_items_sorted)
+
+        return topk_matrix
