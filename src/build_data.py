@@ -32,7 +32,8 @@ def build_icm():
     ICM_partial = hstack((ICM_album, ICM_artist))
     ICM = hstack((ICM_partial, ICM_duration))
 
-    return ICM
+    #return ICM
+    return ICM_partial
 
 
 def loadTarget():

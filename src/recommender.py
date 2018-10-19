@@ -1,5 +1,7 @@
 import scipy
 import numpy as np
+import src.similarities as sim
+import src.build_data as bd
 
 class TopPop(object):
 
@@ -32,13 +34,12 @@ class TopPop(object):
 
 class CBF_Item_Naive(object):
     def __init__(self, k):
-
+        self._cosine = sim.Cosine_Similarity(bd.build_ICM(), k)
         self._k = k
 
 
     def fit(self, URM_train):
-
-        d = 1
+        S = self._cosine.compute()
 
     def recommend(self, user_ID, at = 10):
 
@@ -48,4 +49,4 @@ class CBF_Item_Naive(object):
         d = 1
 
 
-class CBF_User_Naive(object):
+# class CBF_User_Naive(object):
