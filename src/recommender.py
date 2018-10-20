@@ -34,19 +34,32 @@ class TopPop(object):
 
 class CBF_Item_Naive(object):
     def __init__(self, k):
-        self._cosine = sim.Cosine_Similarity(bd.build_ICM(), k)
+        self._cosine = sim.Cosine_Similarity(bd.build_icm(), k)
+        self.URM = bd.build_urm()
         self._k = k
 
 
     def fit(self, URM_train):
-        S = self._cosine.compute()
+        self._cosine.compute()
+        S_knn = self._cosine.topK(self._k)
+        self.estimated_ratings = np.dot(self.URM, S_knn)
+
 
     def recommend(self, user_ID, at = 10):
+        user_estimated = self.estimated_ratings[user_ID]
+        user_real = self.URM.tocsr()[user_ID]
 
-        d = 1
+        user_estimated_sorted = np.argsort(-user_estimated, axis=0)
+        user_real_sorted = np.argsort(-user_real, axis=1)
 
-    def recommendALL(selfself, userList, at = 10):
-        d = 1
+        recommendation = [x for x in user_estimated_sorted if x not in user_real_sorted]
+        return recommendation[0:at]
 
+    def recommendALL(self, userList, at = 10):
+        for user in userList:
+            print(self.recommend(user, at))
 
-# class CBF_User_Naive(object):
+if __name__ == '__main__':
+    a = CBF_Item_Naive(10)
+    a.fit(a)
+    print(a.recommend(0))

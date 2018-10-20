@@ -11,9 +11,9 @@ def build_urm():
     datafile = np.loadtxt('../data/train.csv', delimiter=',', skiprows=1, dtype=int)
     userList, itemList = zip(*datafile)
     ratings = np.ones(1211791)
-    URM_all = sps.coo_matrix((ratings, (userList, itemList)))
-    dm = data.Data_manager(URM_all)
-    return  dm
+    return sps.coo_matrix((ratings, (userList, itemList)))
+    #dm = data.Data_manager(URM_all)
+    #return  dm
 
 def build_icm():
     MAX_ALBUM = 12744
