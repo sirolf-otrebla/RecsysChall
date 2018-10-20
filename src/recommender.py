@@ -42,17 +42,18 @@ class CBF_Item_Naive(object):
     def fit(self, URM_train):
         self._cosine.compute()
         S_knn = self._cosine.topK(self._k)
-        self.estimated_ratings = np.dot(self.URM, S_knn)
+        self.estimated_ratings = self.URM.dot(S_knn)
 
 
     def recommend(self, user_ID, at = 10):
-        user_estimated = self.estimated_ratings[user_ID]
-        user_real = self.URM.tocsr()[user_ID]
+        user_estimated = self.estimated_ratings.getrow(user_ID).toarray().squeeze()
+        user_real = self.URM.tocsr().getrow(user_ID).toarray().squeeze()
 
-        user_estimated_sorted = np.argsort(-user_estimated, axis=0)
-        user_real_sorted = np.argsort(-user_real, axis=1)
+        user_real = np.argwhere(user_real > 0)
 
-        recommendation = [x for x in user_estimated_sorted if x not in user_real_sorted]
+        user_estimated_sorted = np.argsort(-user_estimated)
+
+        recommendation = [x for x in user_estimated_sorted if x not in user_real]
         return recommendation[0:at]
 
     def recommendALL(self, userList, at = 10):
