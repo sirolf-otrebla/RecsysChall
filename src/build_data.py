@@ -27,13 +27,27 @@ def build_icm():
 
     ICM_album = sps.csc_matrix((ratings, (tracks_list, album_list)))
     ICM_artist = sps.csc_matrix((ratings, (tracks_list, artist_list)))
-    ICM_duration = sps.csc_matrix((ratings, (tracks_list, duration_list)))
+
+
+    duration_class_list = []
+
+    for index in range(len(tracks_list)):
+        if duration_list[index] < 106:
+            duration_class_list.append(0)
+        elif duration_list[index] >= 106 and duration_list[index] < 212 :
+            duration_class_list.append(1)
+        elif (duration_list[index] >= 212 and duration_list[index] < 318):
+            duration_class_list.append(2)
+        else:
+            duration_class_list.append(3)
+
+    ICM_duration = sps.csc_matrix((ratings, (tracks_list, duration_class_list)))
 
     ICM_partial = hstack((ICM_album, ICM_artist))
     ICM = hstack((ICM_partial, ICM_duration))
 
     #return ICM
-    return ICM_partial
+    return ICM
 
 
 def loadTarget():
