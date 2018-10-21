@@ -61,6 +61,6 @@ class CBF_Item_Naive(object):
             print(self.recommend(user, at))
 
 if __name__ == '__main__':
-    a = CBF_Item_Naive(10)
+    a = CBF_Item_Naive(20)
     a.fit(a)
     print(a.recommend(0))
