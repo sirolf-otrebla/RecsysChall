@@ -21,5 +21,5 @@ for j in recommended:
     i = i+1
 d = {'playlist_id': playlists, 'track_ids' : res_fin}
 df = pandas.DataFrame(data=d,index=None)
-df.to_csv("../results/recommended7.csv", index=None)
+df.to_csv("../results/recommended8.csv", index=None)
 i = 1+1
