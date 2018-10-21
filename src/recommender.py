@@ -42,25 +42,67 @@ class CBF_Item_Naive(object):
     def fit(self, URM_train):
         self._cosine.compute()
         S_knn = self._cosine.topK(self._k)
-        self.estimated_ratings = self.URM.dot(S_knn)
+        DEBUG = S_knn.getrow(13757).toarray()
+        print(DEBUG)
+        self._S_knn = S_knn
+        self.estimated_ratings = self.URM.dot(S_knn.transpose())
 
 
     def recommend(self, user_ID, at = 10):
+        user_ID = int(user_ID)
         user_estimated = self.estimated_ratings.getrow(user_ID).toarray().squeeze()
         user_real = self.URM.tocsr().getrow(user_ID).toarray().squeeze()
 
         user_real = np.argwhere(user_real > 0)
 
         user_estimated_sorted = np.argsort(-user_estimated)
-
+        DEBUGuser_estimated_values = np.sort(-user_estimated)
+        DEBUGurm_row13759 = self.URM.getrow(13759).toarray()
+        DEBUGsknn_row13759 = self._S_knn.getrow(13759).toarray()
         recommendation = [x for x in user_estimated_sorted if x not in user_real]
         return recommendation[0:at]
 
-    def recommendALL(self, userList, at = 10):
-        for user in userList:
-            print(self.recommend(user, at))
+    def recommendAll(self, userList, at = 10):
+        res = np.array([])
+        for i in userList:
+            recList = self.recommend(i, 10)
+            tuple = np.concatenate((i, recList))
+            if (res.size == 0):
+                res = tuple
+            else:
+                res = np.vstack([res, tuple])
+        return res
 
-if __name__ == '__main__':
-    a = CBF_Item_Naive(10)
-    a.fit(a)
-    print(a.recommend(0))
+
+class CBF_coldstart(object):
+
+    def __init__(self, k,  coldstart=10):
+
+        self._coldstart = coldstart
+        self._cbf = CBF_Item_Naive(k)
+        self._URM = bd.build_urm().tocsr()
+        self._toppop = TopPop()
+
+    def fit(self):
+
+        self._toppop.fit(self._URM)
+        self._cbf.fit(self._URM)
+
+    def recommend(self, userID, at=10, limit=10):
+
+        row_sum = self._URM.getrow(userID).sum()
+        if row_sum > limit :
+            return self._cbf.recommend(userID, at)
+        else:
+            return self._toppop.recommend(userID, at)
+
+    def recommendAll(self, userList, at=10, limit=10):
+        res = np.array([])
+        for i in userList:
+            recList = self.recommend(i, 10, limit)
+            tuple = np.concatenate((i, recList))
+            if (res.size == 0):
+                res = tuple
+            else:
+                res = np.vstack([res, tuple])
+        return res

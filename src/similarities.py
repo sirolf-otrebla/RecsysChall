@@ -15,7 +15,7 @@ class Cosine_Similarity(object):
         self._S = None
 
     def compute(self):
-        check_matrix(self.ICM, 'csc')
+        check_matrix(self.ICM, 'csr')
         S = np.dot(self.ICM, self.ICM.transpose())
         S.setdiag(0)
         self._S = S
@@ -23,7 +23,7 @@ class Cosine_Similarity(object):
         return S
 
     def assign_weights(self, w):
-        self._weighted_S = np.dot(self._S, w )
+        self._weighted_S = np.dot(self._S, w)
         return  self._weighted_S
 
     def topK(self, k):
@@ -63,5 +63,4 @@ class Cosine_Similarity(object):
                     values[topk_row_idx, element] = 1
 
         S_knn = np.dot(self._weighted_S, values)
-        print(values)
         return S_knn
