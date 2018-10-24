@@ -16,7 +16,7 @@ class Cosine_Similarity(object):
 
     def compute(self):
         check_matrix(self.ICM, 'csr')
-        S = np.dot(self.ICM, self.ICM.transpose())
+        S = self.ICM.dot(self.ICM.transpose()).tocsr()
         S.setdiag(0)
         self._S = S
         self._weighted_S = S
@@ -31,7 +31,6 @@ class Cosine_Similarity(object):
         topk_matrix = []
         # values = sps.lil_matrix((self._weighted_S.shape[0], self._weighted_S.shape[1]))
         values = sps.lil_matrix((self._weighted_S.shape[0], self._weighted_S.shape[1]))
-        values = sps.random(self._weighted_S.shape[0], self._weighted_S.shape[1], density=0, format='lil')
         topK_items_sorted = []
         d = []
         if (self._weighted_S != None):
@@ -62,5 +61,7 @@ class Cosine_Similarity(object):
                 for element in topk_matrix[topk_row_idx]:
                     values[topk_row_idx, element] = 1
 
-        S_knn = np.dot(self._weighted_S, values)
+        # S_knn = np.dot(self._weighted_S, values)
+        S_knn = np.multiply(self._weighted_S, values)
         return S_knn
+

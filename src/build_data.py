@@ -18,15 +18,18 @@ def build_urm():
 def build_icm():
     MAX_ALBUM = 12744
     MAX_ARTIST = 6668
-    MAX_DURATION = 2115
+
+    ALBUM_WEIGHT = 1.5
+    ARTIST_WEIGHT = 1
+    DURATION_WEIGHT = 0.1
 
     datafile = np.loadtxt('../data/tracks.csv', delimiter=',', skiprows=1, dtype=int)
 
     tracks_list, album_list, artist_list, duration_list = zip(*datafile)
     ratings = np.ones(len(album_list), dtype=int)
 
-    ICM_album = sps.csc_matrix((ratings, (tracks_list, album_list)))
-    ICM_artist = sps.csc_matrix((ratings, (tracks_list, artist_list)))
+    ICM_album = sps.csc_matrix((ratings*ALBUM_WEIGHT, (tracks_list, album_list)))
+    ICM_artist = sps.csc_matrix((ratings*ARTIST_WEIGHT, (tracks_list, artist_list)))
 
 
     duration_class_list = []
@@ -41,13 +44,12 @@ def build_icm():
         else:
             duration_class_list.append(3)
 
-    ICM_duration = sps.csc_matrix((ratings, (tracks_list, duration_class_list)))
+    ICM_duration = sps.csc_matrix((ratings*DURATION_WEIGHT, (tracks_list, duration_class_list)))
 
     ICM_partial = hstack((ICM_album, ICM_artist))
     ICM = hstack((ICM_partial, ICM_duration))
 
-    #return ICM
-    return ICM
+    return ICM.tocsr()
 
 
 def loadTarget():
