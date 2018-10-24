@@ -60,6 +60,7 @@ class Cosine_Similarity(object):
             for topk_row_idx in range(len(topk_matrix)):
                 for element in topk_matrix[topk_row_idx]:
                     values[topk_row_idx, element] = 1
+                    #Check this matrix, it should be an elementwise matrix
 
         # S_knn = np.dot(self._weighted_S, values)
         S_knn = np.multiply(self._weighted_S, values)
