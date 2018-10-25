@@ -369,6 +369,43 @@ class CBFKNNRecSys():
                 res = np.vstack([res, tuple])
         return res
 
+class CFKNNRecSys():
+
+    def __init__(self, URM_train, k=100, shrink=0):
+        self._URM_train = URM_train.tocsr()
+        self._ICM = ICM
+        self._k = k
+        self._shrink = shrink
+
+    def fit(self):
+        self._similarity_matrix = Cosine_Similarity(self._URM_train.T, self._k, self._shrink).compute_similarity()
+        self._estimated_ratings = self._similarity_matrix.dot(self._URM_train)
+
+    def recommend(self, user_id, at=10):
+        user_real = self._URM_train.getrow(user_id).toarray().squeeze()
+        user_estimated = self._estimated_ratings.getrow(user_id).toarray().squeeze()
+
+        user_real = np.argwhere(user_real > 0)
+
+        user_estimated_sorted = np.argsort(-user_estimated)
+        recommendation = [x for x in user_estimated_sorted if x not in user_real]
+
+        debug = recommendation[0:at]
+
+        return debug
+
+    def recommendALL(self, userList, at=10):
+        res = np.array([])
+        self._estimated_ratings.tocsr()
+        for i in userList:
+            recList = self.recommend(i, at)
+            tuple = np.concatenate((i, recList))
+            if (res.size == 0):
+                res = tuple
+            else:
+                res = np.vstack([res, tuple])
+        return res
+
 if __name__ == '__main__':
     URM_text = np.loadtxt('../../data/train.csv', delimiter=',', dtype=int, skiprows=1)
     user_list, item_list = zip(*URM_text)
@@ -384,7 +421,6 @@ if __name__ == '__main__':
     ratingList = np.array(rating_list)
 
     URM_train = sps.coo_matrix((ratingList[train_mask], (userList[train_mask], itemList[train_mask])))
-
     test_mask = np.logical_not(train_mask)
     URM_test = sps.coo_matrix((ratingList[test_mask], (userList[test_mask], itemList[test_mask])))
 
@@ -417,7 +453,7 @@ if __name__ == '__main__':
 
     ICM = hstack((ICM_partial, ICM_duration))
 
-    cbf = CBFKNNRecSys(URM, ICM, 50)
+    cbf = CFKNNRecSys(URM, 50)
     cbf.fit()
 
     target = pd.read_csv('../../data/target_playlists.csv', index_col=False)
@@ -435,4 +471,4 @@ if __name__ == '__main__':
         i = i + 1
     d = {'playlist_id': playlists, 'track_ids': res_fin}
     df = pd.DataFrame(data=d, index=None)
-    df.to_csv("./results/recommended2.csv", index=None)
+    df.to_csv("../../results/recommendedCFtest.csv", index=None)
