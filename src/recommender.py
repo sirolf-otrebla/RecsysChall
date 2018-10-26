@@ -160,7 +160,7 @@ class ALS_factorization(object):
             for i, confidence in self.nonzeros(Cui, u):
 
                 #conjugate gradient method
-                yx = Y[i].dot(x)
+                yx = Y[i].dot(x.T)
                 r += (confidence - (confidence - 1) * yx) * Y[i]
 
             p = r.copy()

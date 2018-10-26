@@ -471,4 +471,4 @@ if __name__ == '__main__':
         i = i + 1
     d = {'playlist_id': playlists, 'track_ids': res_fin}
     df = pd.DataFrame(data=d, index=None)
-    df.to_csv("../../results/recommendedCFtest.csv", index=None)
+    df.to_csv("../../results/recommendedCFtest1.csv", index=None)
