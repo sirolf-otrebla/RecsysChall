@@ -1,12 +1,9 @@
 import pandas as pd
 import numpy as np
-import scipy as sp
 import scipy.sparse as sps
+import cython
 from scipy.sparse import hstack
-import time
-import time, sys
-from numba import jit
-
+from MF_RMSE import *
 
 def precision(recommended_items, relevant_items):
     is_relevant = np.in1d(recommended_items, relevant_items, assume_unique=True)
@@ -84,47 +81,43 @@ def check_matrix(X, format='csc', dtype=np.float32):
 class MFGDRecsys():
 
     def __init__(self, URM_train, k=100, shrink=0):
-        self._URM_train = URM_train.tolil()
+        self._URM_train = URM_train
         self._ICM = ICM
         self._k = k
         self._shrink = shrink
 
-    def fit(self, factors=5, iterations=200000, mu=0.2):
-        non_zeros = self._URM_train.nonzero()
-        self._P = sps.random(self._URM_train.shape[0], factors).tolil()
-        self._Q = sps.random(self._URM_train.shape[1], factors).tolil()
-        self.TRESHOLD = 0.01
-        init_t = time.time()
-        start = time.time()
-        print("\n \n \n ##################### starting batch gradient descent #####################\n \n \n" )
-        for i in range(0, iterations):
-            k = np.random.randint(0, len(non_zeros[0]))
-            self._batchGD(non_zeros, k)
-            if (i%500 == 0):
-                end = time.time()
-                print("\n processed elements : {0} \t time spent: {1}".format(i, end-start))
+    def fit(self, num_factors=50,
+                 learning_rate=0.01,
+                 reg=0.015,
+                 epochs=50,
+                 init_mean=0.0,
+                 init_std=0.1,
+                 lrate_decay=1.0,
+                 rnd_seed=42):
 
-        self._estimated_ratings = self._P.dot(self._Q.T)
+        self.num_factors = num_factors
+        self.learning_rate = learning_rate
+        self.reg = reg
+        self.epochs = epochs
+        self.init_mean = init_mean
+        self.init_std = init_std
+        self.lrate_decay = lrate_decay
+        self.rnd_seed = rnd_seed
 
-    @jit
-    def _batchGD(self, non_zeros, k, alpha=0.001, mu=0.2):
+        self.U, self.V = FunkSVD_sgd(self._URM_train, self.num_factors, self.learning_rate, self.reg, self.epochs, self.init_mean,
+                                     self.init_std,
+                                     self.lrate_decay, self.rnd_seed)
+        self._estimated_ratings = np.dot(self.U, self.V.T)
 
-        i = non_zeros[0][k]
-        j = non_zeros[1][k]
-        error = (self._URM_train[i,j] - self._P.dot(self._Q.T)[i,j])
-        oldPi = self._P[i,:]
-        oldQj = self._Q[j,:]
-        self._P[i, :] = oldPi + alpha * (2 * error * oldQj - mu*oldPi)
-        self._Q[j, :] = oldQj + alpha * (2 * error * oldPi - mu*oldQj)
 
     def recommend(self, user_id, at=10):
         user_real = self._URM_train.getrow(user_id).toarray().squeeze()
-        user_estimated = self._estimated_ratings.getrow(user_id).toarray().squeeze()
+        user_estimated = self._estimated_ratings[user_id, :]
 
         user_real = np.argwhere(user_real > 0)
 
         user_estimated_sorted = np.argsort(-user_estimated)
-        recommendation = [x for x in user_estimated_sorted if x not in user_real]
+        recommendation = [x for x in user_estimated_sorted[0,:] if x not in user_real]
 
         debug = recommendation[0:at]
 
@@ -187,10 +180,9 @@ if __name__ == '__main__':
     ICM_partial = hstack((ICM_album, ICM_artist))
 
     ICM = hstack((ICM_partial, ICM_duration))
-
-    cf = MFGDRecsys(URM, 50)
+    R = URM_train.tocsr()
+    cf = MFGDRecsys(R, 50)
     cf.fit()
-
     target = pd.read_csv('../../data/target_playlists.csv', index_col=False)
     recommended = cf.recommendALL(target.values)
 
@@ -206,4 +198,4 @@ if __name__ == '__main__':
         i = i + 1
     d = {'playlist_id': playlists, 'track_ids': res_fin}
     df = pd.DataFrame(data=d, index=None)
-    df.to_csv("../../results/recommendedCFtest.csv", index=None)
+    df.to_csv("../../results/recommendedMFGD.csv", index=None)
