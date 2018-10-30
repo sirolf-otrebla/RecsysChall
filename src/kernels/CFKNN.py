@@ -332,43 +332,6 @@ class Cosine_Similarity:
 
             return W_sparse
 
-
-class CBFKNNRecSys():
-
-    def __init__(self, URM_train, ICM, k=100, shrink=20):
-        self._URM_train = URM_train.tocsr()
-        self._ICM = ICM
-        self._k = k
-        self._shrink = shrink
-
-    def fit(self):
-        self._similarity_matrix = Cosine_Similarity(self._ICM.T, self._k, self._shrink, mode='cosine').compute_similarity()
-        self._estimated_ratings = self._URM_train.dot(self._similarity_matrix)
-
-    def recommend(self, user_id, at=10):
-        user_real = self._URM_train.getrow(user_id).toarray().squeeze()
-        user_estimated = self._estimated_ratings.getrow(user_id).toarray().squeeze()
-
-        user_real = np.argwhere(user_real > 0)
-
-        user_estimated_sorted = np.argsort(-user_estimated)
-        recommendation = [x for x in user_estimated_sorted if x not in user_real]
-
-        debug = recommendation[0:at]
-
-        return debug
-
-    def recommendALL(self, userList, at=10):
-        res = np.array([])
-        for i in userList:
-            recList = self.recommend(i, at)
-            tuple = np.concatenate((i, recList))
-            if (res.size == 0):
-                res = tuple
-            else:
-                res = np.vstack([res, tuple])
-        return res
-
 class CFKNNRecSys():
 
     def __init__(self, URM_train, k=100, shrink=0):
@@ -406,6 +369,7 @@ class CFKNNRecSys():
                 res = np.vstack([res, tuple])
         return res
 
+
 if __name__ == '__main__':
     URM_text = np.loadtxt('../../data/train.csv', delimiter=',', dtype=int, skiprows=1)
     user_list, item_list = zip(*URM_text)
@@ -423,35 +387,6 @@ if __name__ == '__main__':
     URM_train = sps.coo_matrix((ratingList[train_mask], (userList[train_mask], itemList[train_mask])))
     test_mask = np.logical_not(train_mask)
     URM_test = sps.coo_matrix((ratingList[test_mask], (userList[test_mask], itemList[test_mask])))
-
-    ICM_text = np.loadtxt('../../data/tracks.csv', delimiter=',', skiprows=1, dtype=int)
-
-    tracks_list, album_list, artist_list, duration_list = zip(*ICM_text)
-
-    ratings = np.ones(len(album_list), dtype=int)
-
-    ICM_album = sps.csc_matrix((ratings, (tracks_list, album_list)))
-    ICM_artist = sps.csc_matrix((ratings, (tracks_list, artist_list)))
-
-    duration_class_list = []
-
-    for index in range(len(tracks_list)):
-        if duration_list[index] < 106:
-            duration_class_list.append(0)
-
-        elif duration_list[index] >= 106 and duration_list[index] < 212:
-            duration_class_list.append(1)
-
-        elif (duration_list[index] >= 212 and duration_list[index] < 318):
-            duration_class_list.append(2)
-
-        else:
-            duration_class_list.append(3)
-
-    ICM_duration = sps.csc_matrix((ratings, (tracks_list, duration_class_list)))
-    ICM_partial = hstack((ICM_album, ICM_artist))
-
-    ICM = hstack((ICM_partial, ICM_duration))
 
     cf = CFKNNRecSys(URM, 50)
     cf.fit()
