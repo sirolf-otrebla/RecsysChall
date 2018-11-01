@@ -61,6 +61,13 @@ def delete_from_csr(mat, row_indices=[], col_indices=[]):
     else:
         return mat
 
+def csr_row_set_val(csr, row, value=0):
+    """Set all nonzero elements (elements currently in the sparsity pattern)
+    to the given value. Useful to set to 0 mostly.
+    """
+    if not isinstance(csr, sps.csr_matrix):
+        raise ValueError('Matrix given must be of CSR format.')
+    csr.data[csr.indptr[row]:csr.indptr[row+1]] = value
 # We pass as paramether the recommender class
 
 def evaluate_algorithm( URM_test, recommended, at=10):
@@ -201,7 +208,7 @@ class IALS_numpy(object):
             print('Finished iter {}'.format(it + 1))
 
     def recommend(self, user, at=None, exclude_seen=True):
-        user_id = user[0]
+        user_id = user
         user_real = self.dataset.getrow(user_id).toarray().squeeze()
         user_estimated = np.dot(self.X[user_id], self.Y.T)
         user_estimated_sorted = user_estimated.argsort()[::-1]
@@ -269,11 +276,11 @@ class IALS_numpy(object):
         return self.dataset[:, item_id]
 
 
-    def recommendALL(self, userList, at=10):
+    def recommendALL(self,true_userList,  userList, at=10):
         res = np.array([])
-        for i in userList:
-            recList = self.recommend(i, at, True) #exclude seen
-            tuple = np.concatenate((i, recList))
+        for i in range(0, len(userList)):
+            recList = self.recommend(userList[i], at, True) #exclude seen
+            tuple = np.concatenate(([true_userList[i]], recList))
             if (res.size == 0):
                 res = tuple
             else:
@@ -290,11 +297,23 @@ if __name__ == '__main__':
     target = pd.read_csv('../../data/target_playlists.csv', index_col=False)
 
     numInteractions = URM.nnz
-    denoise_mask = [i for i in range(0,URM.shape[0]) if URM.getrow(i).sum() < 10 and i not in target.values ]
+    sums = URM.sum(1).squeeze()
+    tgt = target.values.squeeze()
+    denoise_mask = [i for i in range(0,sums.shape[1]) if sums[0,i] < 10 and i not in tgt ]
     userList = np.array(user_list)
     itemList = np.array(item_list)
     ratingList = np.array(rating_list)
     denoised_URM = delete_from_csr(URM, denoise_mask)
+    denoise_mask = np.array(denoise_mask)
+    tgt_reduced = tgt.copy()
+    for i in range(0, denoise_mask.shape[0]):
+        for j in range(0, len(tgt_reduced)):
+            value = tgt_reduced[j]
+            if tgt_reduced[-1] == 4247:
+                print("porcodio")
+            if denoise_mask[i] <= value:
+                tgt_reduced[j] -= 1
+
     duration_class_list = []
     R = denoised_URM.tocsr()
     cf = IALS_numpy()
@@ -302,7 +321,7 @@ if __name__ == '__main__':
 #    recommended = cf.recommendALL(target.values)
 #    playlists = target.take([0], axis=1)
 #    evaluate_algorithm(URM.tocsr(), recommended)
-    recommended = cf.recommendALL(target.values)
+    recommended = cf.recommendALL(tgt, tgt_reduced)
     playlists = recommended[:, 0]
     recommended = np.delete(recommended, 0, 1)
     i = 0

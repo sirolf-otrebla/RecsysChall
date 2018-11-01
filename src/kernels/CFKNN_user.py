@@ -340,8 +340,8 @@ class CFKNNRecSys():
         self._shrink = shrink
 
     def fit(self):
-        self._similarity_matrix = Cosine_Similarity(self._URM_train.tocsc(), self._k, self._shrink, normalize=True, mode='cosine').compute_similarity()
-        self._estimated_ratings = self._URM_train.dot(self._similarity_matrix).tocsr()
+        self._similarity_matrix = Cosine_Similarity(self._URM_train.T.tocsc(), self._k, self._shrink, normalize=True, mode='cosine').compute_similarity()
+        self._estimated_ratings = self._similarity_matrix.dot(self._URM_train).tocsr()
 
     def recommend(self, user_id, at=10):
         user_real = self._URM_train.getrow(user_id).toarray().squeeze()
@@ -405,4 +405,4 @@ if __name__ == '__main__':
         i = i + 1
     d = {'playlist_id': playlists, 'track_ids': res_fin}
     df = pd.DataFrame(data=d, index=None)
-    df.to_csv("../../results/recommendedCFtestItemNORMALIZED.csv", index=None)
+    df.to_csv("../../results/recommendedCFtestUserNORMALIZED.csv", index=None)
