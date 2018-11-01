@@ -29,7 +29,11 @@ def MAP(is_relevant, relevant_items):
     # Cumulative sum: precision at 1, at 2, at 3 ...
     p_at_k = is_relevant * np.cumsum(is_relevant, dtype=np.float32) / (1 + np.arange(is_relevant.shape[0]))
 
-    map_score = np.sum(p_at_k) / np.min([relevant_items.shape[0], is_relevant.shape[0]])
+    if(is_relevant.shape[0] == 0 or relevant_items.shape[0] == 0):
+
+        print('ciao')
+
+    map_score = np.sum(p_at_k) / np.min([len(relevant_items), len(is_relevant)])
 
     return map_score
 
@@ -48,17 +52,21 @@ def evaluate_csv(URM_test, path):
 
     for i in range(0, len(csv_file)):
         user_id = csv_file.iloc[i,0]
-        user_recommendation_items = csv_file.iloc[i,1].split()
-        user_recommendation_items = list(map(int, user_recommendation_items))
-        user_relevant_items = URM_test.getrow(user_id).indices
 
+        start_pos = URM_test.indptr[user_id]
+        end_pos = URM_test.indptr[user_id+1]
 
-        is_relevant = np.in1d(user_recommendation_items, user_relevant_items, assume_unique=True)
+        if end_pos-start_pos>0:
 
-        cumulative_precision += precision(is_relevant, user_relevant_items)
-        cumulative_recall += recall(is_relevant, user_relevant_items)
-        cumulative_MAP += MAP(is_relevant, user_relevant_items)
-        num_eval += 1
+            relevant_items = URM_test.indices[start_pos:end_pos]
+            recommended_items = list(map(int,csv_file.iloc[i,1].split()))
+
+            is_relevant = np.in1d(recommended_items, relevant_items, assume_unique=True)
+
+            cumulative_precision += precision(is_relevant, relevant_items)
+            cumulative_recall += recall(is_relevant, relevant_items)
+            cumulative_MAP += MAP(is_relevant, relevant_items)
+            num_eval += 1
 
     cumulative_precision /= num_eval
     cumulative_recall /= num_eval
