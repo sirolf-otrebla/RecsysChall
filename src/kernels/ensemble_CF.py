@@ -371,14 +371,14 @@ class Item_CFKNNRecSys():
         return res
 
 class ensemble_CFKNNRecSys():
-    def __init__(self, URM_train, k=100, shrink=0):
+    def __init__(self, URM_train, k=100, alpha=0.07809/(0.07809+0.08188) , beta=0.08188/(0.07809+0.08188), shrink=0):
         self._URM_train = URM_train.tocsr()
         self._k = k
         self._shrink = shrink
 
-        self.UUSCORE = 0.07809 / (0.07809 + 0.08188)
+        self.UUSCORE = alpha
 
-        self.IISCORE = 0.08188 / (0.07809 + 0.08188)
+        self.IISCORE = beta
 
     def fit(self):
         self._similarity_matrixUU = Cosine_Similarity(self._URM_train.T, self._k, self._shrink, normalize=True, mode='cosine').compute_similarity()
@@ -422,7 +422,31 @@ class ensemble_CFKNNRecSys():
                 res = np.vstack([res, tuple])
         return res
 
-if __name__ == '__main__':
+
+def xvalidation_par(elements=1500, folds=10):
+    maps = []
+    alphas = []
+    for i in range(0, elements):
+        alpha = np.random.uniform(0, 1)
+        data = []
+        for j in range(0, folds):
+            beta = 1 - alpha
+            res = main(alpha, beta)
+            map = res["MAP"]
+            data.append(map)
+        data_array = np.array(data)
+        mean = np.average(data_array)
+        alphas.append(alpha)
+        maps.append(mean)
+        print('\n \n_____________________________________')
+        print('finished iteration {0} with a = {1}'.format(i, alpha))
+        print('_____________________________________\n \n')
+
+    d = {"alpha" : alphas, "map" : maps}
+    df = pd.DataFrame(data=d, index=None)
+    df.to_csv("../../results/evaluation/data_ensembleCF.csv", index=None)
+
+def main(alpha, beta):
     URM_text = np.loadtxt('../../data/train.csv', delimiter=',', dtype=int, skiprows=1)
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
@@ -430,7 +454,7 @@ if __name__ == '__main__':
 
     URM_train, URM_test = utils.train_test_holdout(URM, 0.8)
 
-    cf = ensemble_CFKNNRecSys(URM, 50)
+    cf = ensemble_CFKNNRecSys(URM_train, 50, alpha, beta)
     cf.fit()
 
     target = pd.read_csv('../../data/target_playlists.csv', index_col=False)
@@ -450,4 +474,7 @@ if __name__ == '__main__':
     df = pd.DataFrame(data=d, index=None)
     df.to_csv("../../results/recommendedCFtest_test_recommend_all.csv", index=None)
 
-    utils.evaluate_csv(URM_test, "../../results/recommendedCFtest_test_recommend_all.csv")
+    return utils.evaluate_csv(URM_test, "../../results/recommendedCFtest_test_recommend_all.csv")
+
+if __name__ == '__main__':
+    xvalidation_par(1500, 10)
