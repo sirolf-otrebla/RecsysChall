@@ -202,10 +202,13 @@ class IALS_numpy(object):
         self.X = np.random.normal(self.init_mean, self.init_std, size=(M, self.num_factors))
         self.Y = np.random.normal(self.init_mean, self.init_std, size=(N, self.num_factors))
 
+
         for it in range(self.iters):
             self.X = self._lsq_solver_fast(C, self.X, self.Y, self.reg)
             self.Y = self._lsq_solver_fast(Ct, self.Y, self.X, self.reg)
             print('Finished iter {}'.format(it + 1))
+
+        return [self.X, self.Y]
 
     def recommend(self, user, at=None, exclude_seen=True):
         user_id = user

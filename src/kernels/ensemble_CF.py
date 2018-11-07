@@ -454,7 +454,7 @@ def main(alpha, beta):
 
     URM_train, URM_test = utils.train_test_holdout(URM, 0.8)
 
-    cf = ensemble_CFKNNRecSys(URM_train, 50, alpha, beta)
+    cf = ensemble_CFKNNRecSys(URM_train, 50, alpha, beta,)
     cf.fit()
 
     target = pd.read_csv('../../data/target_playlists.csv', index_col=False)

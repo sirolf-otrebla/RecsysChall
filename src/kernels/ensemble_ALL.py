@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import scipy as sp
+import src.kernels.ALSMF as als
 import scipy.sparse as sps
 from scipy.sparse import hstack
 import time, sys
@@ -371,7 +372,12 @@ class Item_CFKNNRecSys():
         return res
 
 class general_ensemble_CFKNNRecSys():
-    def __init__(self, URM_train, ICM, k=100, alpha=0.07809/(0.07809+0.08188+0.02325), beta=0.08188/(0.07809+0.08188+0.02325), gamma=0.02325/(0.07809+0.08188+0.02325) , shrink=0):
+    def __init__(self, URM_train, ICM, k=100,
+                 alpha=0.8188,
+                 beta=0.7662,
+                 gamma=0.3325,
+                 epsilon = 0.6212,
+                 shrink=5):
         self._URM_train = URM_train.tocsr()
         self._ICM = ICM.tocsr()
         self._k = k
@@ -383,17 +389,36 @@ class general_ensemble_CFKNNRecSys():
 
         self. CBFSCORE = gamma
 
-    def fit(self):
-        self._similarity_matrixUU = Cosine_Similarity(self._URM_train.T, self._k, self._shrink, normalize=True, mode='cosine').compute_similarity()
-        self._similarity_matrixII = Cosine_Similarity(self._URM_train.tocsc(), self._k, self._shrink, normalize=True, mode='cosine').compute_similarity()
-        self._similarity_matrixCBF = Cosine_Similarity(self._ICM.T, self._k, self._shrink, normalize=True, mode='cosine').compute_similarity()
+        self.IALSSCORE = epsilon
+
+    def fit(self, alpha):
+        self._similarity_matrixUU = Cosine_Similarity(self._URM_train.T,
+                                                      self._k,
+                                                      self._shrink,
+                                                      normalize=True,
+                                                      mode='cosine').compute_similarity()
+
+        self._similarity_matrixII = Cosine_Similarity(self._URM_train.tocsc(),
+                                                      self._k,
+                                                      self._shrink,
+                                                      normalize=True,
+                                                      mode='cosine').compute_similarity()
+
+        self._similarity_matrixCBF = Cosine_Similarity(self._ICM.T,
+                                                       self._k,
+                                                       self._shrink,
+                                                       normalize=True,
+                                                       mode='cosine').compute_similarity()
+
+        self.lfactors = (als.IALS_numpy(reg=alpha)).fit(self._URM_train)
 
     def recommend(self, user_id, at=None, exclude_seen=True):
         # compute the scores using the dot product
         user_profile = self._URM_train[user_id]
         scores = (self.IISCORE*user_profile.dot(self._similarity_matrixII).toarray() +
                    self.UUSCORE*self._similarity_matrixUU[user_id].dot(self._URM_train).toarray() +
-                    self.CBFSCORE*user_profile.dot(self._similarity_matrixCBF).toarray()).ravel()
+                    self.CBFSCORE*user_profile.dot(self._similarity_matrixCBF).toarray() +
+                  np.dot( self.lfactors[0][user_id], self.lfactors[1].T)).ravel()
 
         if exclude_seen:
             scores = self.filter_seen(user_id, scores)
@@ -427,13 +452,41 @@ class general_ensemble_CFKNNRecSys():
                 res = np.vstack([res, tuple])
         return res
 
-def main():
+def xvalidation_par(elements=1500, folds=10):
+    maps = []
+    alphas = []
+    for i in range(0, elements):
+        alpha = np.random.uniform(0, 0.05)
+        beta = np.random.uniform(0,1)
+        print('\n \n_____________________________________')
+        print('starting iteration {0} with a = {1} and b = {2}'.format(i, alpha, beta))
+        print('_____________________________________\n \n')
+        data = []
+        for j in range(0, folds):
+            beta = 1 - alpha
+            res = main(alpha, beta)
+            map = res["MAP"]
+            data.append(map)
+        data_array = np.array(data)
+        mean = np.average(data_array)
+        alphas.append(alpha)
+        maps.append(mean)
+        print('\n \n_____________________________________')
+        print('finished iteration {0} with a = {1} and b = {2}'.format(i, alpha, beta))
+        print('_____________________________________\n \n')
+
+    d = {"alpha" : alphas, "map" : maps}
+    df = pd.DataFrame(data=d, index=None)
+    df.to_csv("../../results/evaluation/data_ensembleALL.csv", index=None)
+
+
+def main(alpha, beta):
     URM_text = np.loadtxt('../../data/train.csv', delimiter=',', dtype=int, skiprows=1)
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
     URM = sps.csr_matrix((rating_list, (user_list, item_list)))
 
-    URM_train, URM_test = utils.train_test_holdout(URM, 0.8)
+    URM_train, URM_test = utils.train_test_holdout(URM, 0.95)
 
     ICM_text = np.loadtxt('../../data/tracks.csv', delimiter=',', skiprows=1, dtype=int)
 
@@ -464,8 +517,8 @@ def main():
 
     ICM = hstack((ICM_partial, ICM_duration))
 
-    cf = general_ensemble_CFKNNRecSys(URM_train, ICM, 50)
-    cf.fit()
+    cf = general_ensemble_CFKNNRecSys(URM, ICM, 50, epsilon=beta)
+    cf.fit(alpha)
 
     target = pd.read_csv('../../data/target_playlists.csv', index_col=False)
     recommended = cf.recommendALL(target.values)
@@ -482,9 +535,9 @@ def main():
         i = i + 1
     d = {'playlist_id': playlists, 'track_ids': res_fin}
     df = pd.DataFrame(data=d, index=None)
-    df.to_csv("../../results/recommendedCFtest_test_recommend_all.csv", index=None)
+    df.to_csv("../../results/resultsEnsembleAll.csv", index=None)
 
-    return utils.evaluate_csv(URM_test, "../../results/recommendedCFtest_test_recommend_all.csv")
+    return utils.evaluate_csv(URM_test,"../../results/resultsEnsembleAll.csv")
 
 if __name__ == '__main__':
-    main()
+    xvalidation_par(250, 10)
