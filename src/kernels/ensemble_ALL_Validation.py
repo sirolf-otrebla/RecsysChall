@@ -456,15 +456,18 @@ def xvalidation_par(elements=1500, folds=10):
     maps = []
     alphas = []
     for i in range(0, elements):
-        alpha = np.random.uniform(0, 0.05)
-        beta = np.random.uniform(0,1)
+        alpha = np.random.uniform(0.01, 0.05)
+        beta = np.random.uniform(0.5,1)
         print('\n \n_____________________________________')
         print('starting iteration {0} with a = {1} and b = {2}'.format(i, alpha, beta))
         print('_____________________________________\n \n')
         data = []
         for j in range(0, folds):
             beta = 1 - alpha
-            res = main(alpha, beta)
+            data_index = np.random.randint(0,999)
+            test = sps.load_npz("../../data/validation_mat/TEST_{0}.npz".format(data_index))
+            train = sps.load_npz("../../data/validation_mat/TRAIN_{0}.npz".format(data_index))
+            res = main(alpha, beta, URM_train=train, URM_test=test)
             map = res["MAP"]
             data.append(map)
         data_array = np.array(data)
@@ -474,19 +477,18 @@ def xvalidation_par(elements=1500, folds=10):
         print('\n \n_____________________________________')
         print('finished iteration {0} with a = {1} and b = {2}'.format(i, alpha, beta))
         print('_____________________________________\n \n')
+        d = {"alpha": alphas, "map": maps}
+        df = pd.DataFrame(data=d, index=None)
+        df.to_csv("../../results/evaluation/data_ensembleALL.csv", index=None)
 
-    d = {"alpha" : alphas, "map" : maps}
-    df = pd.DataFrame(data=d, index=None)
-    df.to_csv("../../results/evaluation/data_ensembleALL.csv", index=None)
 
+def main(alpha, beta, URM_train, URM_test):
+    #URM_text = np.loadtxt('../../data/train.csv', delimiter=',', dtype=int, skiprows=1)
+    #user_list, item_list = zip(*URM_text)
+    #rating_list = np.ones(len(user_list))
+    #URM = sps.csr_matrix((rating_list, (user_list, item_list)))
 
-def main(alpha, beta):
-    URM_text = np.loadtxt('../../data/train.csv', delimiter=',', dtype=int, skiprows=1)
-    user_list, item_list = zip(*URM_text)
-    rating_list = np.ones(len(user_list))
-    URM = sps.csr_matrix((rating_list, (user_list, item_list)))
-
-    URM_train, URM_test = utils.train_test_holdout(URM, 0.95)
+    #URM_train, URM_test = utils.train_test_holdout(URM, 0.95)
 
     ICM_text = np.loadtxt('../../data/tracks.csv', delimiter=',', skiprows=1, dtype=int)
 
@@ -517,7 +519,7 @@ def main(alpha, beta):
 
     ICM = hstack((ICM_partial, ICM_duration))
 
-    cf = general_ensemble_CFKNNRecSys(URM, ICM, 50, epsilon=beta)
+    cf = general_ensemble_CFKNNRecSys(URM_train, ICM, 50, epsilon=beta)
     cf.fit(alpha)
 
     target = pd.read_csv('../../data/target_playlists.csv', index_col=False)
@@ -540,4 +542,4 @@ def main(alpha, beta):
     return utils.evaluate_csv(URM_test,"../../results/resultsEnsembleAll.csv")
 
 if __name__ == '__main__':
-    xvalidation_par(250, 10)
+    xvalidation_par(250, 2)

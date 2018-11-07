@@ -1,56 +1,26 @@
+import pandas as pd
 import numpy as np
+import scipy as sp
+import scipy.sparse as sps
+from scipy.sparse import hstack
+import time, sys
+from src.new_utils import utils
 
-class Validator(object):
-
-    def __init__(self):
-        self._cumulative_precision = 0.0
-        self._cumulative_recall = 0.0
-        self._cumulative_MAP = 0.0
-
-        self._num_eval = 0
-
-    def MAP(self, recommended_items, relevant_items):
-        is_relevant = np.in1d(recommended_items, relevant_items, assume_unique=True)
-
-        # Cumulative sum: precision at 1, at 2, at 3 ...
-        p_at_k = is_relevant * np.cumsum(is_relevant, dtype=np.float32) / (1 + np.arange(is_relevant.shape[0]))
-
-        map_score = np.sum(p_at_k) / np.min([relevant_items.shape[0], is_relevant.shape[0]])
-
-        return map_score
-
-    def recall(self, recommended_items, relevant_items):
-        is_relevant = np.in1d(recommended_items, relevant_items, assume_unique=True)
-
-        recall_score = np.sum(is_relevant, dtype=np.float32) / relevant_items.shape[0]
-
-        return recall_score
-
-    def precision(self, recommended_items, relevant_items):
-        is_relevant = np.in1d(recommended_items, relevant_items, assume_unique=True)
-
-        precision_score = np.sum(is_relevant, dtype=np.float32) / len(is_relevant)
-
-        return precision_score
+def gen_k_folds_matrix(URM, n):
+    for i in range(0,n):
+        URM_train, URM_test = utils.train_test_holdout(URM, 0.95)
+        if URM_train.shape[0] == URM.shape[0] and URM_train.shape[1] == URM.shape[1]\
+                and URM_test.shape[0] == URM.shape[0] and URM_test.shape[1] == URM.shape[1]:
+            sps.save_npz("../data/validation_mat/TRAIN_{0}".format(i), URM_train)
+            sps.save_npz("../data/validation_mat/TEST_{0}".format(i), URM_test)
+        else:
+            i -= 1
 
 
-    def evaluate_algorithm(self, userList_unique, URM_test, recommender_object, at=5):
 
-        for user_id in userList_unique:
-
-            relevant_items = URM_test[user_id].indices
-
-            if len(relevant_items) > 0:
-                recommended_items = recommender_object.recommend(user_id, at=at)
-                self._num_eval += 1
-
-                self._cumulative_precision += self.precision(recommended_items, relevant_items)
-                self._cumulative_recall += self.recall(recommended_items, relevant_items)
-                self._cumulative_MAP += self.MAP(recommended_items, relevant_items)
-
-        self._cumulative_precision /= self._num_eval
-        self._cumulative_recall /= self._num_eval
-        self._cumulative_MAP /= self._num_eval
-
-        print("Recommender performance is: Precision = {:.4f}, Recall = {:.4f}, MAP = {:.4f}".format(
-            self._cumulative_precision, self._cumulative_recall, self._cumulative_MAP))
+if __name__ == '__main__':
+    URM_text = np.loadtxt('../data/train.csv', delimiter=',', dtype=int, skiprows=1)
+    user_list, item_list = zip(*URM_text)
+    rating_list = np.ones(len(user_list))
+    URM = sps.csr_matrix((rating_list, (user_list, item_list)))
+    gen_k_folds_matrix(URM, 1000)
