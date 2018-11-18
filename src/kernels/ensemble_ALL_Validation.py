@@ -496,8 +496,8 @@ def main(alpha, beta, URM_train, URM_test):
 
     ratings = np.ones(len(album_list), dtype=int)
 
-    ICM_album = sps.csc_matrix((ratings, (tracks_list, album_list)))
-    ICM_artist = sps.csc_matrix((ratings, (tracks_list, artist_list)))
+    ICM_album = sps.csc_matrix((ratings*0.7, (tracks_list, album_list)))
+    ICM_artist = sps.csc_matrix((ratings*0.2, (tracks_list, artist_list)))
 
     duration_class_list = []
 
@@ -514,7 +514,7 @@ def main(alpha, beta, URM_train, URM_test):
         else:
             duration_class_list.append(3)
 
-    ICM_duration = sps.csc_matrix((ratings, (tracks_list, duration_class_list)))
+    ICM_duration = sps.csc_matrix((ratings*0.1, (tracks_list, duration_class_list)))
     ICM_partial = hstack((ICM_album, ICM_artist))
 
     ICM = hstack((ICM_partial, ICM_duration))

@@ -9,9 +9,6 @@ Created on 23/10/17
 import logging
 
 import numpy as np
-from Base.Recommender_utils import check_matrix
-
-from Base.Recommender import Recommender
 from MatrixFactorization.Cython.MF_RMSE import FunkSVD_sgd, AsySVD_sgd, AsySVD_compute_user_factors, BPRMF_sgd
 
 logger = logging.getLogger(__name__)
@@ -20,7 +17,23 @@ logging.basicConfig(
     format="%(asctime)s: %(name)s: %(levelname)s: %(message)s")
 
 
-
+def check_matrix(X, format='csc', dtype=np.float32):
+    if format == 'csc' and not isinstance(X, sps.csc_matrix):
+        return X.tocsc().astype(dtype)
+    elif format == 'csr' and not isinstance(X, sps.csr_matrix):
+        return X.tocsr().astype(dtype)
+    elif format == 'coo' and not isinstance(X, sps.coo_matrix):
+        return X.tocoo().astype(dtype)
+    elif format == 'dok' and not isinstance(X, sps.dok_matrix):
+        return X.todok().astype(dtype)
+    elif format == 'bsr' and not isinstance(X, sps.bsr_matrix):
+        return X.tobsr().astype(dtype)
+    elif format == 'dia' and not isinstance(X, sps.dia_matrix):
+        return X.todia().astype(dtype)
+    elif format == 'lil' and not isinstance(X, sps.lil_matrix):
+        return X.tolil().astype(dtype)
+    else:
+        return X.astype(dtype)
 
 class FunkSVD(Recommender):
     '''
@@ -255,6 +268,7 @@ class AsySVD(Recommender):
         # precompute the user factors
         M = R.shape[0]
         self.U = np.vstack([AsySVD_compute_user_factors(R[i], self.Y) for i in range(M)])
+        return self.X, self.U
 
     def recommend(self, user_id, n=None, exclude_seen=True):
         scores = np.dot(self.X, self.U[user_id].T)

@@ -7,6 +7,6 @@ from Cython.Distutils import build_ext
 
 ext_modules = cythonize(Extension(
         "MF_RMSE",
-        sources=["MF_RMSE.pyx"],
+        sources=["aqaa.pyx"],
         language="c",
 ))
