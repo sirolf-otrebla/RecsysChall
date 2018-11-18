@@ -43,8 +43,11 @@ class Similarity_Matrix_Recommender(object):
             if self.sparse_weights:
                 den = rated.dot(self.W_sparse).toarray().ravel()
             else:
-                den = rated.dot(self.W).ravel()
+                den = rated.dot(self.W)
+            den = den[0]
+            den = den.tolil()
             den[np.abs(den) < 1e-6] = 1.0  # to avoid NaNs
+            scores.tolil()
             scores /= den
 
         if exclude_seen:
