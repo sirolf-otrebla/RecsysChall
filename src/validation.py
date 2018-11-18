@@ -23,4 +23,4 @@ if __name__ == '__main__':
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
     URM = sps.csr_matrix((rating_list, (user_list, item_list)))
-    gen_k_folds_matrix(URM, 1000)
+    gen_k_folds_matrix(URM, 10)
