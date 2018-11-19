@@ -3,7 +3,6 @@ import numpy as np
 import scipy.sparse as sps
 import cython
 from scipy.sparse import hstack
-from MF_RMSE import *
 
 def precision(recommended_items, relevant_items):
     is_relevant = np.in1d(recommended_items, relevant_items, assume_unique=True)

@@ -464,7 +464,7 @@ def xvalidation_par(elements=1500, folds=10):
         data = []
         for j in range(0, folds):
             beta = 1 - alpha
-            data_index = np.random.randint(0,999)
+            data_index = np.random.randint(1, 9)
             test = sps.load_npz("../../data/validation_mat/TEST_{0}.npz".format(data_index))
             train = sps.load_npz("../../data/validation_mat/TRAIN_{0}.npz".format(data_index))
             res = main(alpha, beta, URM_train=train, URM_test=test)
@@ -490,14 +490,24 @@ def main(alpha, beta, URM_train, URM_test):
 
     #URM_train, URM_test = utils.train_test_holdout(URM, 0.95)
 
+    ARTIST_WEIGHT = 0.3
+    ALBUM_WEIGHT = 0.6
+    DURATION_WEIGHT = 0.1
+
     ICM_text = np.loadtxt('../../data/tracks.csv', delimiter=',', skiprows=1, dtype=int)
 
     tracks_list, album_list, artist_list, duration_list = zip(*ICM_text)
 
     ratings = np.ones(len(album_list), dtype=int)
 
-    ICM_album = sps.csc_matrix((ratings*0.7, (tracks_list, album_list)))
-    ICM_artist = sps.csc_matrix((ratings*0.2, (tracks_list, artist_list)))
+    ICM_album = sps.csc_matrix((ratings, (tracks_list, album_list)))
+    ICM_artist = sps.csc_matrix((ratings, (tracks_list, artist_list)))
+
+    ICM_album_flat = ICM_album.toarray().ravel()
+    ICM_artist_flat = ICM_artist.toarray().ravel()
+
+    ICM_album = np.multiply(ALBUM_WEIGHT, ICM_album_flat).reshape(ICM_album.shape)
+    ICM_artist = np.multiply(ARTIST_WEIGHT, ICM_artist_flat).reshape(ICM_artist.shape)
 
     duration_class_list = []
 
@@ -514,10 +524,14 @@ def main(alpha, beta, URM_train, URM_test):
         else:
             duration_class_list.append(3)
 
-    ICM_duration = sps.csc_matrix((ratings*0.1, (tracks_list, duration_class_list)))
-    ICM_partial = hstack((ICM_album, ICM_artist))
+    ICM_duration = sps.csc_matrix((ratings, (tracks_list, duration_class_list)))
 
-    ICM = hstack((ICM_partial, ICM_duration))
+    ICM_duration_flat = ICM_duration.toarray().ravel()
+    ICM_duration = np.multiply(DURATION_WEIGHT, ICM_duration_flat).reshape(ICM_duration.shape)
+
+    ICM_partial = np.concatenate((ICM_album, ICM_artist), axis=1)
+
+    ICM = np.concatenate((ICM_partial, ICM_duration), axis=1)
 
     cf = general_ensemble_CFKNNRecSys(URM_train, ICM, 50, epsilon=beta)
     cf.fit(alpha)
