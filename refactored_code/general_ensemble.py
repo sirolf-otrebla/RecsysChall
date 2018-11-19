@@ -52,7 +52,7 @@ class GeneralEnsemble:
 
         self.latent_x, self.latent_y = (IALS_numpy(reg=alpha)).fit(self._URM_train)
 
-        self.bpr_W = SLIM_BPR_Cython(self._URM_train, positive_threshold=0.6).fit(epochs=12, validate_every_N_epochs=13, URM_test=self._URM_test,
+        self.bpr_W = SLIM_BPR_Cython(self._URM_train, positive_threshold=0.6).fit(epochs=3, validate_every_N_epochs=13, URM_test=self._URM_test,
                                                                                                     batch_size=1, sgd_mode='rmsprop', learning_rate=1e-4)
 
     def recommend(self, user_id, at=None, exclude_seen=True):

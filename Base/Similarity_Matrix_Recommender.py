@@ -7,6 +7,7 @@ Created on 16/09/2017
 """
 
 import numpy as np
+from sklearn import preprocessing
 
 
 class Similarity_Matrix_Recommender(object):
@@ -35,19 +36,20 @@ class Similarity_Matrix_Recommender(object):
             relevant_weights = self.W[user_profile]
             scores = relevant_weights.T.dot(user_ratings)
 
-        if self.normalize:
+        #if self.normalize:
             # normalization will keep the scores in the same range
             # of value of the ratings in dataset
-            rated = user_profile.copy()
-            if len(rated) > 0:
-                rated.data = np.ones_like(rated.data)
-                if self.sparse_weights:
-                    den = rated.dot(self.W_sparse).toarray().ravel()
-                else:
-                    den = rated.dot(self.W)
-                userden = den[0][user_id, :].toarray()
-                userden[np.abs(userden) < 1e-6] = 1.0  # to avoid NaNs
-                scores /= userden.ravel()
+            # normalization will keep the scores in the same range
+            # of value of the ratings in dataset
+            #rated = user_profile.copy()
+            #rated.data = np.ones_like(rated.data)
+            #if self.sparse_weights:
+            #    den = rated.dot(self.W_sparse).toarray().ravel()
+            #else:
+            #    den = rated.dot(self.W).ravel()
+            #den[np.abs(den) < 1e-6] = 1.0  # to avoid NaNs
+            #scores /= den
+
         if exclude_seen:
             scores = self._filter_seen_on_scores(user_id, scores)
 
