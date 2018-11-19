@@ -22,7 +22,7 @@ import time
 import sys
 
 from libc.math cimport exp, sqrt
-from libc.stdlib cimport rand, RAND_MAX
+from libc.stdlib cimport rand
 
 
 cdef struct BPR_sample:

@@ -6,7 +6,6 @@ Created on 07/09/17
 @author: Maurizio Ferrari Dacrema
 """
 
-from Base.Recommender_utils import similarityMatrixTopK
 from Base.Recommender import Recommender
 import subprocess
 import os, sys

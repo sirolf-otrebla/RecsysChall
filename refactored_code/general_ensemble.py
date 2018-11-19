@@ -1,8 +1,8 @@
 from Base.Cython.cosine_similarity import Cosine_Similarity
 from refactored_code.IALS_numpy import IALS_numpy
 from SLIM_BPR.Cython.SLIM_BPR_Cython import SLIM_BPR_Cython
+from sklearn import preprocessing
 import numpy as np
-import scipy.sparse as sps
 
 
 class GeneralEnsemble:
@@ -37,31 +37,37 @@ class GeneralEnsemble:
                                                       self._shrink,
                                                       normalize=True,
                                                       mode='cosine').compute_similarity()
+        self._similarity_matrixUU = preprocessing.normalize(self._similarity_matrixUU, norm='max', axis=1)
 
         self._similarity_matrixII = Cosine_Similarity(self._URM_train.tocsc(),
                                                       self._k,
                                                       self._shrink,
                                                       normalize=True,
                                                       mode='cosine').compute_similarity()
+        self._similarity_matrixII = preprocessing.normalize(self._similarity_matrixII, norm='max', axis=1)
+
 
         self._similarity_matrixCBF = Cosine_Similarity(self._ICM.T,
                                                        self._k,
                                                        self._shrink,
                                                        normalize=True,
                                                        mode='cosine').compute_similarity()
+        self._similarity_matrixCBF = preprocessing.normalize(self._similarity_matrixCBF, norm='max', axis=1)
 
         self.latent_x, self.latent_y = (IALS_numpy(reg=alpha)).fit(self._URM_train)
 
         self.bpr_W = SLIM_BPR_Cython(self._URM_train, positive_threshold=0.6).fit(epochs=3, validate_every_N_epochs=13, URM_test=self._URM_test,
                                                                                                     batch_size=1, sgd_mode='rmsprop', learning_rate=1e-4)
+        self.bpr_W = preprocessing.normalize(self.bpr_W, norm='max', axis=1)
 
     def recommend(self, user_id, at=None, exclude_seen=True):
         # compute the scores using the dot product
         user_profile = self._URM_train[user_id]
+        normalized_IALS = preprocessing.normalize(np.dot(self.latent_x[user_id], self.latent_y.T), axis=0, norm='max')
         scores = (self.IISCORE*user_profile.dot(self._similarity_matrixII).toarray() +
                   self.UUSCORE*self._similarity_matrixUU[user_id].dot(self._URM_train).toarray() +
                   self.CBFSCORE*user_profile.dot(self._similarity_matrixCBF).toarray() +
-                  self.IALSSCORE*np.dot(self.latent_x[user_id], self.latent_y.T) +
+                  self.IALSSCORE*normalized_IALS +
                   self.SLIM_BPR*user_profile.dot(self.bpr_W).toarray()).ravel()
 
         if exclude_seen:

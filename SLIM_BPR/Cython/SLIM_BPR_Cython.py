@@ -6,11 +6,9 @@ Created on 07/09/17
 @author: Maurizio Ferrari Dacrema
 """
 
-from Base.Recommender_utils import similarityMatrixTopK
 from SLIM_BPR.SLIM_BPR_Python import SLIM_BPR_Python
 import subprocess
 import os, sys
-import numpy as np
 from sklearn import preprocessing
 
 
@@ -93,7 +91,7 @@ class SLIM_BPR_Cython(SLIM_BPR_Python):
                                          lambda_j = lambda_j,
                                          learning_rate = learning_rate,
                                          topK = topK)
-        self.W = preprocessing.normalize(self.W, norm='l2', axis=1)
+        # self.W = preprocessing.normalize(self.W, norm='l1', axis=1)
         return self.W
 
 

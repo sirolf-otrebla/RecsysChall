@@ -12,7 +12,7 @@ import numpy as np
 
 from Base.metrics import roc_auc, precision, recall, map, ndcg, rr
 #from Base.Cython.metrics import roc_auc, precision, recall, map, ndcg, rr
-from Base.Recommender_utils import check_matrix, areURMequals, removeTopPop
+from Base.Recommender_utils import check_matrix, removeTopPop
 
 
 class Recommender(object):

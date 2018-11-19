@@ -9,7 +9,6 @@ import unittest
 from Base.Recommender_utils import similarityMatrixTopK
 import subprocess, os
 import numpy as np
-import time
 import scipy.sparse as sps
 
 
@@ -395,8 +394,6 @@ def runCompilationScript():
     #subprocess.call(["cython", "-a", "cosine_similarity.pyx"])
 
 if __name__ == '__main__':
-
-    from data.Movielens10MReader import Movielens10MReader
 
     runCompilationScript()
 

@@ -16,13 +16,11 @@ Created on 07/09/17
 #defining NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 from Base.Recommender_utils import similarityMatrixTopK, check_matrix
-import numpy as np
-cimport numpy as np
 import time
 import sys
 
 from libc.math cimport exp, sqrt
-from libc.stdlib cimport rand, RAND_MAX
+from libc.stdlib cimport rand
 
 
 cdef struct BPR_sample:
@@ -357,12 +355,7 @@ cdef class SLIM_BPR_Cython_Epoch:
 #####################
 ##################################################################################################################
 
-import scipy.sparse as sps
-
-import numpy as np
-cimport numpy as np
-
-from libc.stdlib cimport malloc, free#, qsort
+from libc.stdlib cimport  free#, qsort
 
 # Declaring QSORT as "gil safe", appending "nogil" at the end of the declaration
 # Otherwise I will not be able to pass the comparator function pointer
