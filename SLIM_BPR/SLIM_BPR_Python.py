@@ -51,7 +51,7 @@ class SLIM_BPR_Python(BPR_Sampling, Similarity_Matrix_Recommender, Recommender):
         self.URM_train = URM_train
         self.n_users = URM_train.shape[0]
         self.n_items = URM_train.shape[1]
-        self.normalize = False
+        self.normalize = True
         self.sparse_weights = sparse_weights
         self.positive_threshold = positive_threshold
 

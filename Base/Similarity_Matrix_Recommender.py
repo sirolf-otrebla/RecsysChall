@@ -39,14 +39,15 @@ class Similarity_Matrix_Recommender(object):
             # normalization will keep the scores in the same range
             # of value of the ratings in dataset
             rated = user_profile.copy()
-            rated.data = np.ones_like(rated.data)
-            if self.sparse_weights:
-                den = rated.dot(self.W_sparse).toarray().ravel()
-            else:
-                den = rated.dot(self.W).ravel()
-            den[np.abs(den) < 1e-6] = 1.0  # to avoid NaNs
-            scores /= den
-
+            if len(rated) > 0:
+                rated.data = np.ones_like(rated.data)
+                if self.sparse_weights:
+                    den = rated.dot(self.W_sparse).toarray().ravel()
+                else:
+                    den = rated.dot(self.W)
+                userden = den[0][user_id, :].toarray()
+                userden[np.abs(userden) < 1e-6] = 1.0  # to avoid NaNs
+                scores /= userden.ravel()
         if exclude_seen:
             scores = self._filter_seen_on_scores(user_id, scores)
 
