@@ -17,10 +17,10 @@ class IALS_numpy:
 
     # TODO: Add support for multiple confidence scaling functions (e.g. linear and log scaling)
     def __init__(self,
-                 num_factors=500,
-                 reg=0.115,
+                 num_factors=50,
+                 reg=0.015,
                  iters=10,
-                 scaling='log',
+                 scaling='linear',
                  alpha=40,
                  epsilon=1.0,
                  init_mean=0.0,

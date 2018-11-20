@@ -91,7 +91,8 @@ class SLIM_BPR_Cython(SLIM_BPR_Python):
                                          lambda_j = lambda_j,
                                          learning_rate = learning_rate,
                                          topK = topK)
-        # self.W = preprocessing.normalize(self.W, norm='l1', axis=1)
+
+        self.W = preprocessing.normalize(self.W, norm='l1', axis=1)
         return self.W
 
 
