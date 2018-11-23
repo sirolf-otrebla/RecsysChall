@@ -154,7 +154,7 @@ def load_icm(album_weight=1, artist_weight=1, duration_weight=1):
     return sps.csr_matrix(np.concatenate((ICM_partial, ICM_duration), axis=1))
 
 
-def load_random_urms(min=3, max=9):
+def load_random_urms(min=0, max=999):
 
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     print(ROOT_DIR)
