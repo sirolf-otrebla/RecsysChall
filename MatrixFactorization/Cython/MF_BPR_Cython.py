@@ -34,9 +34,9 @@ class MF_BPR_Cython(Recommender):
 
 
 
-    def fit(self, epochs=30, logFile=None, URM_test=None, filterTopPop = False, filterCustomItems = np.array([], dtype=np.int), minRatingsPerUser=1,
-            batch_size = 1000, validate_every_N_epochs = 1, start_validation_after_N_epochs = 0, num_factors=10,  positive_threshold=4,
-            learning_rate = 0.05, sgd_mode='sgd', user_reg = 0.0, positive_reg = 0.0, negative_reg = 0.0):
+    def fit(self, epochs=10, logFile=None, URM_test=None, filterTopPop = False, filterCustomItems = np.array([], dtype=np.int), minRatingsPerUser=1,
+            batch_size = 1000, validate_every_N_epochs = 30, start_validation_after_N_epochs = 9, num_factors=10,  positive_threshold=4,
+            learning_rate = 0.05, sgd_mode='sgd', user_reg = 0.05, positive_reg = 0.05, negative_reg = 0.05):
 
 
         self.num_factors = num_factors
@@ -89,7 +89,7 @@ class MF_BPR_Cython(Recommender):
                 self.W = self.cythonEpoch.get_W()
                 self.H = self.cythonEpoch.get_H()
 
-                results_run = self.evaluateRecommendations(URM_test, filterTopPop=filterTopPop,
+                results_run = self.evaluateRecommendations(self.URM_train, URM_test, filterTopPop=filterTopPop,
                                                            minRatingsPerUser=minRatingsPerUser, filterCustomItems=filterCustomItems)
 
                 self.writeCurrentConfig(currentEpoch, results_run, logFile)
@@ -110,6 +110,8 @@ class MF_BPR_Cython(Recommender):
         print("Fit completed in {:.2f} minutes".format(float(time.time() - start_time_train) / 60))
 
         sys.stdout.flush()
+
+        return self.W, self.H
 
 
 

@@ -28,10 +28,10 @@ if len(sys.argv) != 4:
     raise ValueError("Wrong number of paramethers received. Expected 4, got {}".format(sys.argv))
 
 
-#fileToCompile = 'MF_BPR_Cython_Epoch.pyx'
+#fileToCompile = 'SLIM_ElasticNet_Cython_Epoch.pyx'
 
 # Get the name of the file to compile
-fileToCompile = '/home/alberto/PycharmProjects/RecsysChall/SLIM_BPR/Cython/SLIM_BPR_Cython_Epoch.pyx'
+fileToCompile = sys.argv[1]
 # Remove the argument from sys argv in order for it to contain only what setup needs
 del sys.argv[1]
 
