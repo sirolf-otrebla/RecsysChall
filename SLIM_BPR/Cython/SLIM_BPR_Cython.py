@@ -50,7 +50,7 @@ class SLIM_BPR_Cython(SLIM_BPR_Python):
 
     def fit(self, epochs=30, logFile=None, URM_test=None, filterTopPop = False, minRatingsPerUser=1,
             batch_size = 1000, validate_every_N_epochs = 1, start_validation_after_N_epochs = 0,
-            lambda_i = 0.01, lambda_j = 0.01, learning_rate = 0.01, topK = 100, sgd_mode='adagrad'):
+            lambda_i = 0.00025, lambda_j = 0.00025, learning_rate = 0.01, topK = 100, sgd_mode='adagrad'):
 
 
         # Select only positive interactions
@@ -93,7 +93,10 @@ class SLIM_BPR_Cython(SLIM_BPR_Python):
                                          topK = topK)
 
         # self.W = preprocessing.normalize(self.W, norm='l1', axis=1)
-        return self.W
+        if self.sparse_weights is True:
+            return  self.W_sparse
+        else:
+            return self.W
 
 
 

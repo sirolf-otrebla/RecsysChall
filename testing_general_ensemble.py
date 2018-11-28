@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from scipy import sparse as sps
 
-def xvalidation_par(elements=500, folds=3):
+def xvalidation_par(elements=500, folds=1):
     maps = []
     alphas = []
     betas = []
@@ -28,9 +28,8 @@ def xvalidation_par(elements=500, folds=3):
         beta = cosine_cf*cfuu
         gamma = others*cbf
         epsilon = others*ml*ials
-        rho = others*ml*bpr*bprii
         mu = others*ml*bpr*bpruu
-
+        rho = others*ml*bpr*bprii + mu
         print('\n \n_____________________________________')
         print('starting iteration {0} with: \n\n '
               '\t alpha = {1} \n '
@@ -52,6 +51,7 @@ def xvalidation_par(elements=500, folds=3):
         alphas.append(alpha)
         betas.append(beta)
         gammas.append(gamma)
+        epsilons.append(epsilon)
         rhos.append(rho)
         mus.append(mu)
         maps.append(mean)
@@ -73,23 +73,21 @@ def xvalidation_par(elements=500, folds=3):
              "mu" : mus,
              "map": maps}
         df = pd.DataFrame(data=d, index=None)
-        df.to_csv("../../results/evaluation/ENSEMBLE_WITH_BPR.csv", index=None)
+        df.to_csv("./results/evaluation/ENSEMBLE_WITH_BPR.csv", index=None)
 
-def main(alpha, beta, gamma,epsilon, rho, mu):
+def main(rho, mu):
     URM_text = np.loadtxt('./data/train.csv', delimiter=',', dtype=int, skiprows=1)
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
     URM = sps.csr_matrix((rating_list, (user_list, item_list)))
-
     urm_train, urm_test = load_random_urms()
     icm = load_icm()
-    general = GeneralEnsemble(urm_train, urm_test, icm,
-                              alpha=alpha,
-                              beta=beta,
-                              gamma=gamma,
-                              epsilon=epsilon,
-                              ro=rho,
-                              mu=mu)
+
+    general = GeneralEnsemble(urm_train, urm_test, icm, ro=rho,mu=mu)
+                              # alpha=alpha,
+                              # beta=beta,
+                              # gamma=gamma,
+                              # epsilon=epsilon,
     general.fit(0.03)
 
     target = pd.read_csv('./data/target_playlists.csv', index_col=False)
@@ -107,10 +105,9 @@ def main(alpha, beta, gamma,epsilon, rho, mu):
         i = i + 1
     d = {'playlist_id': playlists, 'track_ids': res_fin}
     df = pd.DataFrame(data=d, index=None)
-    df.to_csv("./results/TESTING_GENERAL_ENSEMBLE11.csv", index=None)
-
-    evaluate_csv(urm_test, "./results/TESTING_GENERAL_ENSEMBLE11.csv")
+    df.to_csv("./results/TESTING_GENERAL_ENSEMBLE12.csv", index=None)
+    del general
+    return evaluate_csv(urm_test, "./results/TESTING_GENERAL_ENSEMBLE12.csv")
 
 if __name__ == '__main__':
-    xvalidation_par()
-
+    main(rho=0.3, mu=0.7)

@@ -14,7 +14,7 @@ def gen_k_folds_matrix(URM, n):
             sps.save_npz("../data/validation_mat/TRAIN_{0}".format(i), URM_train)
             sps.save_npz("../data/validation_mat/TEST_{0}".format(i), URM_test)
         else:
-            i -= 1
+            i = i- 1
 
 
 
@@ -23,4 +23,4 @@ if __name__ == '__main__':
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
     URM = sps.csr_matrix((rating_list, (user_list, item_list)))
-    gen_k_folds_matrix(URM, 10)
+    gen_k_folds_matrix(URM, 5000)
