@@ -4,7 +4,7 @@ import scipy as sp
 import pandas as p
 from scipy.sparse import hstack
 
-from src import data
+from old_stuff import data
 
 
 def build_urm():

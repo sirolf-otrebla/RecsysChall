@@ -1,3 +1,4 @@
+from Base.Evaluation.Evaluator import SequentialEvaluator
 from refactored_code.general_ensemble import GeneralEnsemble
 from refactored_code.utils import load_random_urms, load_icm, evaluate_csv, load_urm
 import pandas as pd
@@ -75,7 +76,7 @@ def xvalidation_par(elements=500, folds=1):
         df = pd.DataFrame(data=d, index=None)
         df.to_csv("./results/evaluation/ENSEMBLE_WITH_BPR.csv", index=None)
 
-def main(rho, mu):
+def main(rho, mu, write=True):
     URM_text = np.loadtxt('./data/train.csv', delimiter=',', dtype=int, skiprows=1)
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
@@ -83,31 +84,35 @@ def main(rho, mu):
     urm_train, urm_test = load_random_urms()
     icm = load_icm()
 
-    general = GeneralEnsemble(urm_train, urm_test, icm, ro=rho,mu=mu)
+    general = GeneralEnsemble(urm_train, urm_test, icm, ro=rho,mu=mu, recommendation_mode='linComb')
                               # alpha=alpha,
                               # beta=beta,
                               # gamma=gamma,
                               # epsilon=epsilon,
-    general.fit(0.03)
+    general.fit(0.001)
 
     target = pd.read_csv('./data/target_playlists.csv', index_col=False)
-    recommended = general.recommendALL(target.values)
+    #evaluator_MF = SequentialEvaluator(URM_test_list=urm_test, cutoff_list=[10])
+    #print(evaluator_MF.evaluateRecommender(general))
 
-    playlists = recommended[:, 0]
-    recommended = np.delete(recommended, 0, 1)
-    i = 0
-    res_fin = []
-    for j in recommended:
-        res = ''
-        for k in range(0, len(j)):
-            res = res + '{0} '.format(j[k])
-        res_fin.append(res)
-        i = i + 1
-    d = {'playlist_id': playlists, 'track_ids': res_fin}
-    df = pd.DataFrame(data=d, index=None)
-    df.to_csv("./results/TESTING_GENERAL_ENSEMBLE12.csv", index=None)
-    del general
-    return evaluate_csv(urm_test, "./results/TESTING_GENERAL_ENSEMBLE12.csv")
+    if write is True:
+        recommended = general.recommendALL(target.values)
+
+        playlists = recommended[:, 0]
+        recommended = np.delete(recommended, 0, 1)
+        i = 0
+        res_fin = []
+        for j in recommended:
+            res = ''
+            for k in range(0, len(j)):
+                res = res + '{0} '.format(j[k])
+            res_fin.append(res)
+            i = i + 1
+        d = {'playlist_id': playlists, 'track_ids': res_fin}
+        df = pd.DataFrame(data=d, index=None)
+        df.to_csv("./results/TESTING_GENERAL_ENSEMBLE16.csv", index=None)
+        del general
+        return evaluate_csv(urm_test, "./results/TESTING_GENERAL_ENSEMBLE16.csv")
 
 if __name__ == '__main__':
-    main(rho=0.3, mu=0.7)
+    main(rho=0.8, mu=0.4, write=True)

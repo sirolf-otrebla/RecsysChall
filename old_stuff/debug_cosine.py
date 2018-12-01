@@ -1,6 +1,6 @@
-from src import build_data
-from src.similarities import Cosine_Similarity
-from src import recommender
+from old_stuff import build_data
+from old_stuff.similarities import Cosine_Similarity
+from old_stuff import recommender
 
 porcodio = build_data.build_icm()
 

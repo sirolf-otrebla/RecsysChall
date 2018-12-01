@@ -4,7 +4,7 @@ import scipy as sp
 import scipy.sparse as sps
 from scipy.sparse import hstack
 import time, sys
-from src.new_utils import utils
+from old_stuff.new_utils import utils
 
 def gen_k_folds_matrix(URM, n):
     for i in range(0,n):

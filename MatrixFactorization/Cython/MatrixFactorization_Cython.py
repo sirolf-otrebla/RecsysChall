@@ -23,7 +23,7 @@ class MatrixFactorization_Cython(Recommender, Incremental_Training_Early_Stoppin
     RECOMMENDER_NAME = "MatrixFactorization_Cython_Recommender"
 
 
-    def __init__(self, URM_train, positive_threshold=4, URM_validation = None, recompile_cython = False, algorithm = "MF_BPR"):
+    def __init__(self, URM_train, positive_threshold=0, URM_validation = None, recompile_cython = False, algorithm = "MF_BPR"):
 
 
         super(MatrixFactorization_Cython, self).__init__()
@@ -62,7 +62,7 @@ class MatrixFactorization_Cython(Recommender, Incremental_Training_Early_Stoppin
 
 
 
-    def fit(self, epochs=300, batch_size = 1000, num_factors=10,
+    def fit(self, epochs=500, batch_size = 1000, num_factors=20,
             learning_rate = 0.01, sgd_mode='sgd', user_reg = 0.0, positive_reg = 0.0, negative_reg = 0.0,
             stop_on_validation = False, lower_validatons_allowed = 5, validation_metric = "MAP",
             evaluator_object = None, validation_every_n = 5):
@@ -145,6 +145,8 @@ class MatrixFactorization_Cython(Recommender, Incremental_Training_Early_Stoppin
         self.H = self.H_best
 
         sys.stdout.flush()
+
+        return  self.W, self.H
 
 
 

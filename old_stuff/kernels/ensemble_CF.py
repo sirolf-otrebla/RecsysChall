@@ -4,7 +4,7 @@ import scipy as sp
 import scipy.sparse as sps
 from scipy.sparse import hstack
 import time, sys
-from src.new_utils import utils
+from old_stuff.new_utils import utils
 
 def check_matrix(X, format='csc', dtype=np.float32):
     if format == 'csc' and not isinstance(X, sps.csc_matrix):
@@ -215,8 +215,8 @@ class Cosine_Similarity:
             if time.time() - start_time_print_batch >= 30 or processedItems==self.n_columns:
                 columnPerSec = processedItems / (time.time() - start_time)
 
-                print("Similarity column {} ( {:2.0f} % ), {:.2f} column/sec, elapsed time {:.2f} min".format(
-                    processedItems, processedItems / self.n_columns * 100, columnPerSec, (time.time() - start_time)/ 60))
+                print("Similarity column {} ( {:2.0f} % ), {:.2f} column/sec, elapsed time {:.2f} secs".format(
+                    processedItems, processedItems / self.n_columns * 100, columnPerSec, (time.time() - start_time)))
 
                 sys.stdout.flush()
                 sys.stderr.flush()
@@ -370,18 +370,94 @@ class Item_CFKNNRecSys():
                 res = np.vstack([res, tuple])
         return res
 
-if __name__ == '__main__':
-    URM_text = np.loadtxt('../data/train.csv', delimiter=',', dtype=int, skiprows=1)
+class ensemble_CFKNNRecSys():
+    def __init__(self, URM_train, k=100, alpha=0.07809/(0.07809+0.08188) , beta=0.08188/(0.07809+0.08188), shrink=0):
+        self._URM_train = URM_train.tocsr()
+        self._k = k
+        self._shrink = shrink
+
+        self.UUSCORE = alpha
+
+        self.IISCORE = beta
+
+    def fit(self):
+        self._similarity_matrixUU = Cosine_Similarity(self._URM_train.T, self._k, self._shrink, normalize=True, mode='cosine').compute_similarity()
+        self._similarity_matrixII = Cosine_Similarity(self._URM_train.tocsc(), self._k, self._shrink, normalize=True, mode='cosine').compute_similarity()
+
+    def recommend(self, user_id, at=None, exclude_seen=True):
+        # compute the scores using the dot product
+        user_profile = self._URM_train[user_id]
+        scores = (self.IISCORE*user_profile.dot(self._similarity_matrixII).toarray() +
+                   self.UUSCORE*self._similarity_matrixUU[user_id].dot(self._URM_train).toarray() ).ravel()
+
+        if exclude_seen:
+            scores = self.filter_seen(user_id, scores)
+
+        # rank items
+        ranking = scores.argsort()[::-1]
+
+        return ranking[:at]
+
+    def filter_seen(self, user_id, scores):
+
+        start_pos = int(self._URM_train.indptr[user_id])
+        end_pos = int(self._URM_train.indptr[user_id + 1])
+
+        user_profile = self._URM_train.indices[start_pos:end_pos]
+
+        scores[user_profile] = -np.inf
+
+        return scores
+
+    def recommendALL(self, userList, at=10):
+        res = np.array([])
+        n=0
+        for i in userList:
+            n+=1
+            recList = self.recommend(i, at)
+            tuple = np.concatenate((i, recList))
+            if (res.size == 0):
+                res = tuple
+            else:
+                res = np.vstack([res, tuple])
+        return res
+
+
+def xvalidation_par(elements=1500, folds=10):
+    maps = []
+    alphas = []
+    for i in range(0, elements):
+        alpha = np.random.uniform(0, 1)
+        data = []
+        for j in range(0, folds):
+            beta = 1 - alpha
+            res = main(alpha, beta)
+            map = res["MAP"]
+            data.append(map)
+        data_array = np.array(data)
+        mean = np.average(data_array)
+        alphas.append(alpha)
+        maps.append(mean)
+        print('\n \n_____________________________________')
+        print('finished iteration {0} with a = {1}'.format(i, alpha))
+        print('_____________________________________\n \n')
+
+    d = {"alpha" : alphas, "map" : maps}
+    df = pd.DataFrame(data=d, index=None)
+    df.to_csv("../../results/evaluation/data_ensembleCF.csv", index=None)
+
+def main(alpha, beta):
+    URM_text = np.loadtxt('../../data/train.csv', delimiter=',', dtype=int, skiprows=1)
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
     URM = sps.csr_matrix((rating_list, (user_list, item_list)))
 
     URM_train, URM_test = utils.train_test_holdout(URM, 0.8)
 
-    cf = Item_CFKNNRecSys(URM_train, 50)
+    cf = ensemble_CFKNNRecSys(URM_train, 50, alpha, beta,)
     cf.fit()
 
-    target = pd.read_csv('../data/target_playlists.csv', index_col=False)
+    target = pd.read_csv('../../data/target_playlists.csv', index_col=False)
     recommended = cf.recommendALL(target.values)
 
     playlists = recommended[:, 0]
@@ -396,6 +472,9 @@ if __name__ == '__main__':
         i = i + 1
     d = {'playlist_id': playlists, 'track_ids': res_fin}
     df = pd.DataFrame(data=d, index=None)
-    df.to_csv("../results/recommendedCFtest_test_recommend_all.csv", index=None)
+    df.to_csv("../../results/recommendedCFtest_test_recommend_all.csv", index=None)
 
-    utils.evaluate_csv(URM_test, "../results/recommendedCFtest_test_recommend_all.csv")
+    return utils.evaluate_csv(URM_test, "../../results/recommendedCFtest_test_recommend_all.csv")
+
+if __name__ == '__main__':
+    xvalidation_par(1500, 10)

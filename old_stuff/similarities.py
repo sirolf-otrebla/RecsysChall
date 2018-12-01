@@ -1,7 +1,7 @@
 import numpy as np
 import time, sys
 import scipy.sparse as sps
-from src import utils
+from old_stuff import utils
 
 check_matrix = utils.check_matrix
 

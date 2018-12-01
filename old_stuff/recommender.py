@@ -1,7 +1,7 @@
 import scipy
 import numpy as np
-import src.similarities as sim
-import src.build_data as bd
+import old_stuff.similarities as sim
+import old_stuff.build_data as bd
 import scipy.sparse as sps
 
 class TopPop(object):

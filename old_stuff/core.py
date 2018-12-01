@@ -1,6 +1,6 @@
-from src import build_data
-from src import data
-from src import recommender as r
+from old_stuff import build_data
+from old_stuff import data
+from old_stuff import recommender as r
 import pandas
 import numpy
 
