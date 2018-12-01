@@ -76,7 +76,7 @@ def xvalidation_par(elements=500, folds=1):
         df = pd.DataFrame(data=d, index=None)
         df.to_csv("./results/evaluation/ENSEMBLE_WITH_BPR.csv", index=None)
 
-def main(rho, mu, write=True):
+def main( write=True):
     URM_text = np.loadtxt('./data/train.csv', delimiter=',', dtype=int, skiprows=1)
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
@@ -84,7 +84,7 @@ def main(rho, mu, write=True):
     urm_train, urm_test = load_random_urms()
     icm = load_icm()
 
-    general = GeneralEnsemble(urm_train, urm_test, icm, ro=rho,mu=mu, recommendation_mode='linComb')
+    general = GeneralEnsemble(URM, urm_test, icm, recommendation_mode='linComb')
                               # alpha=alpha,
                               # beta=beta,
                               # gamma=gamma,
@@ -110,9 +110,9 @@ def main(rho, mu, write=True):
             i = i + 1
         d = {'playlist_id': playlists, 'track_ids': res_fin}
         df = pd.DataFrame(data=d, index=None)
-        df.to_csv("./results/TESTING_GENERAL_ENSEMBLE16.csv", index=None)
+        df.to_csv("./results/TESTING_GENERAL_ENSEMBLE17_nocf.csv", index=None)
         del general
-        return evaluate_csv(urm_test, "./results/TESTING_GENERAL_ENSEMBLE16.csv")
+        return evaluate_csv(urm_test, "./results/TESTING_GENERAL_ENSEMBLE17_nocf.csv")
 
 if __name__ == '__main__':
-    main(rho=0.8, mu=0.4, write=True)
+    main( write=True)

@@ -15,8 +15,8 @@ class GeneralEnsemble:
                  beta= 0.6188,
                  gamma=0.3,
                  epsilon= 0.6212, #0.6212,
-                 ro=0.7662,
-                 mu = 0.6118,
+                 ro=0.8062,
+                 mu = 0.7118,
                  chi = 1,
                  shrink=15,
                  recommendation_mode='linComb'):
@@ -72,12 +72,12 @@ class GeneralEnsemble:
         print("\n \n max bprII: {0}".format(self.bpr_WII.max()))
         print(self.bpr_WII)
         print("\n \n max bprUU: {0}".format(self.bpr_WUU.max()))
-        # self._similarity_matrixUU = Cosine_Similarity(self._URM_train.T,
-        #                                              topK=200,
-        #                                              shrink=15,
-        #                                              normalize=True,
-        #                                              mode='cosine').compute_similarity()
-        # print("\n \n max uu: {0}".format(self._similarity_matrixUU.max()))
+        self._similarity_matrixUU = Cosine_Similarity(self._URM_train.T,
+                                                      topK=200,
+                                                      shrink=15,
+                                                      normalize=True,
+                                                      mode='cosine').compute_similarity()
+        print("\n \n max uu: {0}".format(self._similarity_matrixUU.max()))
 
         # self._similarity_matrixII = Cosine_Similarity(self._URM_train.tocsc(),
         #                                              topK=200,
