@@ -26,9 +26,9 @@ from libc.stdlib cimport rand, RAND_MAX
 
 
 cdef struct BPR_sample:
-    long user
-    long pos_item
-    long neg_item
+    long long user
+    long long pos_item
+    long long neg_item
 
 
 cdef class MF_BPR_Cython_Epoch:
@@ -95,7 +95,7 @@ cdef class MF_BPR_Cython_Epoch:
 
 
     # Using memoryview instead of the sparse matrix itself allows for much faster access
-    cdef int[:] getSeenItems(self, long index):
+    cdef int[:] getSeenItems(self, long long index):
         return self.URM_mask_indices[self.URM_mask_indptr[index]:self.URM_mask_indptr[index + 1]]
 
 
@@ -103,12 +103,12 @@ cdef class MF_BPR_Cython_Epoch:
     def epochIteration_Cython(self):
 
         # Get number of available interactions
-        cdef long totalNumberOfBatch = int(self.numPositiveIteractions / self.batch_size) + 1
+        cdef long long totalNumberOfBatch = int(self.numPositiveIteractions / self.batch_size) + 1
 
 
         cdef BPR_sample sample
-        cdef long u, i, j
-        cdef long index, numCurrentBatch
+        cdef long long u, i, j
+        cdef long long index, numCurrentBatch
         cdef double x_uij, sigmoid_user, sigmoid_item
 
         cdef int numSeenItems
@@ -130,8 +130,8 @@ cdef class MF_BPR_Cython_Epoch:
         #     gamma = 0.001
 
 
-        cdef long start_time_epoch = time.time()
-        cdef long start_time_batch = time.time()
+        cdef long long start_time_epoch = time.time()
+        cdef long long start_time_batch = time.time()
 
         for numCurrentBatch in range(totalNumberOfBatch):
 
@@ -213,7 +213,7 @@ cdef class MF_BPR_Cython_Epoch:
     cdef BPR_sample sampleBPR_Cython(self):
 
         cdef BPR_sample sample = BPR_sample(-1,-1,-1)
-        cdef long index, start_pos_seen_items, end_pos_seen_items
+        cdef long long index, start_pos_seen_items, end_pos_seen_items
 
         cdef int negItemSelected, numSeenItems = 0
 

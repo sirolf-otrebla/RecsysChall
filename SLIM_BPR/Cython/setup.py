@@ -6,7 +6,7 @@ import numpy as np                           # <---- New line
 ext_modules = [Extension("SLIM_BPR_Cython_Epoch", ["SLIM_BPR_Cython_Epoch.pyx"])]
 
 setup(
-  name = 'Hello world app',
+  name = 'SLIM_BPR_Cython_Epoch',
   cmdclass = {'build_ext': build_ext},
   include_dirs = [np.get_include()],         # <---- New line
   ext_modules = ext_modules
