@@ -9,7 +9,7 @@ import numpy as np
 
 
 
-class BMussoliniEnsemble:
+class GDannunzioEnsemble:
 
     def __init__(self, urm_train, urm_test, icm, parameters=None):
 
@@ -47,6 +47,7 @@ class BMussoliniEnsemble:
 
     def fit(self):
 
+
         self.item_bpr_w = self.item_bpr_recommender.fit(epochs=10, topK=200, batch_size=200, sgd_mode='adagrad', learning_rate=1e-2)
         self.user_bpr_w = self.user_bpr_recommender.fit(epochs=10, topK=200, batch_size=200, sgd_mode='adagrad', learning_rate=1e-2)
         self.cbf_bpr_w = self.cbf_bpr_recommender.fit(epochs=10, topK=200, batch_size=200, sgd_mode='adagrad', learning_rate=1e-2)
@@ -55,16 +56,18 @@ class BMussoliniEnsemble:
         self.cbf_w = self.cbf_recommender.compute_similarity()
         self.ials_latent_x, self.ials_latent_y = self.ials_recommender.fit(R=self.train)
         self.min_ials = np.dot(self.ials_latent_x, self.ials_latent_y.T).min()
+
+
     def recommend(self, user_id, combiner, at=10):
         user_profile = self.train[user_id, :]
 
-        item_bpr_r = user_profile.dot(self.item_bpr_w).toarray().ravel()
-        user_bpr_r = self.user_bpr_w[user_id].dot(self.train).toarray().ravel()
-        item_cosineCF_r = user_profile.dot(self.item_cosineCF_w).toarray().ravel()
-        user_cosineCF_r = self.user_cosineCF_w[user_id].dot(self.train).toarray().ravel()
-        cbf_r = user_profile.dot(self.cbf_w).toarray().ravel()
-        cbf_bpr_r = user_profile.dot(self.cbf_bpr_w).toarray().ravel()
-        ials_r = np.dot(self.ials_latent_x[user_id], self.ials_latent_y.T + self.min_ials).ravel()
+        item_bpr_r = preprocessing.normalize(user_profile.dot(self.item_bpr_w).toarray(), norm='l2').ravel()
+        user_bpr_r = preprocessing.normalize(self.user_bpr_w[user_id].dot(self.train).toarray(), norm='l2').ravel()
+        item_cosineCF_r = preprocessing.normalize(user_profile.dot(self.item_cosineCF_w).toarray(), norm='l2').ravel()
+        user_cosineCF_r = preprocessing.normalize(self.user_cosineCF_w[user_id].dot(self.train).toarray(), norm='l2').ravel()
+        cbf_r = preprocessing.normalize(user_profile.dot(self.cbf_w).toarray(), norm='l2').ravel()
+        cbf_bpr_r = preprocessing.normalize(user_profile.dot(self.cbf_bpr_w).toarray(), norm='l2').ravel()
+        ials_r = preprocessing.normalize(np.dot(self.ials_latent_x[user_id], self.ials_latent_y.T + self.min_ials).reshape(1,-1), norm='l2').ravel()
 
         scores = [
             [item_bpr_r, self.ensemble_weights["ITEM_BPR"], "ITEM_BPR" ],
@@ -88,7 +91,8 @@ class BMussoliniEnsemble:
 
         user_profile = self.train.indices[start_pos:end_pos]
 
-        scores[user_profile] = -1000000 #-np.inf
+        scores[user_profile] = -np.inf
+
         return scores
 
     def recommend_batch(self, user_list, combiner, at=10):

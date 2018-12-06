@@ -1,3 +1,4 @@
+import numpy as np
 
 
 class linearCombiner():
@@ -6,9 +7,10 @@ class linearCombiner():
 
         total_scores = 0
         for score in parameters:
-            R, w = score[0], score[1]
-            total_scores += w*R
+            R = score[0]
+            w = score[1]
+            total_scores += np.multiply(R, w)
 
         ranking = total_scores.argsort()[::-1]
 
-        return ranking[:at].ravel()
+        return ranking[:at]

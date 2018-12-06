@@ -102,8 +102,8 @@ class GeneralEnsemble:
         user_profile = self._URM_train[user_id]
         # normalized_IALS = np.dot(self.latent_x[user_id], self.latent_y.T)
         normalized_IALS = self.IALS_SCALING*self.IALSSCORE*np.dot(self.latent_x[user_id], self.latent_y.T)
-        # cfii = self.IISCORE*user_profile.dot(self._similarity_matrixII).toarray()
-        # cfuu = self.UUSCORE*self._similarity_matrixUU[user_id].dot(self._URM_train).toarray()
+        cfii = self.IISCORE*user_profile.dot(self._similarity_matrixII).toarray()
+        cfuu = self.UUSCORE*self._similarity_matrixUU[user_id].dot(self._URM_train).toarray()
         cbf =  self.CBFSCORE*self.CBFSCORE*user_profile.dot(self._similarity_matrixCBF).toarray()
 
         scores = ( cbf + normalized_IALS).ravel()
