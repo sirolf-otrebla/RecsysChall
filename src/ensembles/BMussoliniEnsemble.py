@@ -1,9 +1,11 @@
 from Base.Cython.cosine_similarity import Cosine_Similarity
-
+from GraphBased.RP3betaRecommender import RP3betaRecommender
+from implicit.als import AlternatingLeastSquares as IALS_CG
 from Base.Evaluation.Evaluator import SequentialEvaluator
 from refactored_code.IALS_numpy import IALS_numpy
 from MatrixFactorization.Cython.MatrixFactorization_Cython import MatrixFactorization_Cython
 from SLIM_BPR.Cython.SLIM_BPR_Cython import SLIM_BPR_Cython
+from implicit.bpr import BayesianPersonalizedRanking as BPR_matrix_factorization
 from sklearn import preprocessing
 import numpy as np
 
@@ -36,45 +38,57 @@ class BMussoliniEnsemble:
 
         self.item_cosineCF_recommender = Cosine_Similarity(self.train, topK=200, shrink=15, normalize=True, mode='cosine')
         self.user_cosineCF_recommender = Cosine_Similarity(self.train.T, topK=200, shrink=15, normalize=True, mode='cosine')
-        self.item_bpr_recommender = SLIM_BPR_Cython(self.train, positive_threshold=0)
-        self.user_bpr_recommender = SLIM_BPR_Cython(self.train.T, positive_threshold=0)
+        # self.item_bpr_recommender = SLIM_BPR_Cython(self.train, positive_threshold=0)
         self.cbf_bpr_recommender = SLIM_BPR_Cython(self.icm.T, positive_threshold=0)
         self.cbf_recommender = Cosine_Similarity(self.icm.T, topK=50, shrink=10, normalize=True, mode='cosine')
-        if self.ensemble_weights["IALS"] == 0:
-            self.ials_recommender = IALS_numpy(iters=0)
-        else:
-            self.ials_recommender = IALS_numpy()
+        self.item_rp3b_recommender = RP3betaRecommender(self.train)
+        self.user_rp3b_recommender = RP3betaRecommender(self.train.T)
+        self.bpr_mf = BPR_matrix_factorization(factors=800, regularization=0.01, learning_rate=0.01, iterations=300)
+        self.ials_cg_mf = IALS_CG(iterations=15, calculate_training_loss=True, factors=500, use_cg=True, regularization=1e-3)
 
     def fit(self):
 
-        self.item_bpr_w = self.item_bpr_recommender.fit(epochs=10, topK=200, batch_size=200, sgd_mode='adagrad', learning_rate=1e-2)
-        self.user_bpr_w = self.user_bpr_recommender.fit(epochs=10, topK=200, batch_size=200, sgd_mode='adagrad', learning_rate=1e-2)
-        self.cbf_bpr_w = self.cbf_bpr_recommender.fit(epochs=10, topK=200, batch_size=200, sgd_mode='adagrad', learning_rate=1e-2)
+        # self.item_bpr_w = self.item_bpr_recommender.fit(epochs=20, topK=500, batch_size=25, sgd_mode='adagrad', learning_rate=1e-2)
+        self.cbf_bpr_w = self.cbf_bpr_recommender.fit(epochs=10, topK=200, batch_size=20, sgd_mode='adagrad', learning_rate=1e-2)
         self.item_cosineCF_w = self.item_cosineCF_recommender.compute_similarity()
         self.user_cosineCF_w = self.user_cosineCF_recommender.compute_similarity()
         self.cbf_w = self.cbf_recommender.compute_similarity()
-        self.ials_latent_x, self.ials_latent_y = self.ials_recommender.fit(R=self.train)
+        self.item_rp3b_w = self.item_rp3b_recommender.fit()
+        self.user_rp3b_w = self.user_rp3b_recommender.fit()
+        self.ials_cg_mf.fit(40*self.train.T)
+        self.ials_latent_x = self.ials_cg_mf.user_factors.copy()
+        self.ials_latent_y = self.ials_cg_mf.item_factors.copy()
         self.min_ials = np.dot(self.ials_latent_x, self.ials_latent_y.T).min()
+        self.bpr_mf.fit(self.train.T.tocoo())
+        self.bpr_mf_latent_x = self.bpr_mf.user_factors.copy()
+        self.bpr_mf_latent_y = self.bpr_mf.item_factors.copy()
+
     def recommend(self, user_id, combiner, at=10):
         user_profile = self.train[user_id, :]
 
-        item_bpr_r = user_profile.dot(self.item_bpr_w).toarray().ravel()
-        user_bpr_r = self.user_bpr_w[user_id].dot(self.train).toarray().ravel()
+        # item_bpr_r = user_profile.dot(self.item_bpr_w).toarray().ravel()
+        # user_bpr_r = self.user_bpr_w[user_id].dot(self.train).toarray().ravel()
         item_cosineCF_r = user_profile.dot(self.item_cosineCF_w).toarray().ravel()
         user_cosineCF_r = self.user_cosineCF_w[user_id].dot(self.train).toarray().ravel()
         cbf_r = user_profile.dot(self.cbf_w).toarray().ravel()
         cbf_bpr_r = user_profile.dot(self.cbf_bpr_w).toarray().ravel()
         ials_r = np.dot(self.ials_latent_x[user_id], self.ials_latent_y.T + self.min_ials).ravel()
+        bpr_mf_r = np.dot(self.bpr_mf_latent_x[user_id], self.bpr_mf_latent_y.T).ravel()
+        item_rp3b_r = user_profile.dot(self.item_rp3b_w).toarray().ravel()
+        user_rp3b_r = self.user_rp3b_w[user_id].dot(self.train).toarray().ravel()
 
         scores = [
-            [item_bpr_r, self.ensemble_weights["ITEM_BPR"], "ITEM_BPR" ],
-            [user_bpr_r, self.ensemble_weights["USER_BPR"], "USER_BPR" ],
+            # [item_bpr_r, self.ensemble_weights["ITEM_BPR"], "ITEM_BPR" ],
+            # [user_bpr_r, self.ensemble_weights["USER_BPR"], "USER_BPR" ],
             [item_cosineCF_r, self.ensemble_weights["ITEM_CF"], "ITEM_CF" ],
             [user_cosineCF_r, self.ensemble_weights["USER_CF"], "USER_CF" ],
             [ials_r, self.ensemble_weights["IALS"], "IALS" ],
             [cbf_r, self.ensemble_weights["CBF"], "CBF" ],
-            [cbf_bpr_r, self.ensemble_weights["CBF_BPR"], "CBF_BPR"]
-        ]
+            [cbf_bpr_r, self.ensemble_weights["CBF_BPR"], "CBF_BPR"],
+            [bpr_mf_r, self.ensemble_weights["BPR_MF"], "BPR_MF"],
+            [item_rp3b_r, self.ensemble_weights["ITEM_RP3B"], "ITEM_RP3B"],
+            [user_rp3b_r, self.ensemble_weights["USER_RP3B"], "USER_RP3B"],
+            ]
 
         for r in scores:
             self.filter_seen(user_id, r[0])
@@ -123,22 +137,6 @@ class BMussoliniEnsemble:
                 "mean": user_cf_rating.mean(),
             }
         del user_cf_rating
-        user_bpr_rating = self.ensemble_weights["USER_BPR"]*self.user_bpr_w.dot(self.train)
-
-        user_bpr = {
-
-                "min": user_bpr_rating.min(),
-                "max": user_bpr_rating.max(),
-                "mean": user_bpr_rating.mean(),
-            }
-        del user_bpr_rating
-        item_bpr_rating =self.ensemble_weights["ITEM_BPR"]*self.train.dot(self.item_bpr_w)
-        item_bpr = {
-                "min": item_bpr_rating.min(),
-                "max": item_bpr_rating.max(),
-                "mean": item_bpr_rating.mean(),
-            }
-        del item_bpr_rating
         ials_rating =  self.ensemble_weights["IALS"]*(np.dot(self.ials_latent_x, self.ials_latent_y.T)+self.min_ials)
 
         ials = {
@@ -167,8 +165,7 @@ class BMussoliniEnsemble:
         return {
             "ITEM_CF" : item_cf,
             "USER_CF": user_cf ,
-            "ITEM_BPR" : item_bpr ,
-            "USER_BPR" : user_bpr,
+            # "ITEM_BPR" : item_bpr ,
             "IALS" : ials,
             "CBF" : cbf,
             "CBF_BPR" : cbf_bpr

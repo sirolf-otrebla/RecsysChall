@@ -13,38 +13,26 @@ def load_urm():
     return sps.csr_matrix((rating_list, (user_list, item_list)))
 
 
-def train_test_holdout(URM_all, train_perc = 0.8):
+def train_test_holdout(urm_all, train_perc=0.8):
 
-    numInteractions = URM_all.nnz
-    URM_all = URM_all.tocoo()
+    num_interactions = urm_all.nnz
 
-    train_mask = np.random.choice([True,False], numInteractions, [train_perc, 1-train_perc])
+    urm_all = urm_all.tocoo()
+    shape = urm_all.shape
 
-    URM_train = sps.coo_matrix((URM_all.data[train_mask], (URM_all.row[train_mask], URM_all.col[train_mask])))
-    URM_train = URM_train.tocsr()
+    train_mask = np.random.choice([True, False], num_interactions, p=[train_perc, 1-train_perc])
+
+    urm_train = sps.coo_matrix((urm_all.data[train_mask],
+                               (urm_all.row[train_mask], urm_all.col[train_mask])), shape=shape)
+    urm_train = urm_train.tocsr()
 
     test_mask = np.logical_not(train_mask)
 
-    URM_test = sps.coo_matrix((URM_all.data[test_mask], (URM_all.row[test_mask], URM_all.col[test_mask])))
-    URM_test = URM_test.tocsr()
+    urm_test = sps.coo_matrix((urm_all.data[test_mask],
+                              (urm_all.row[test_mask], urm_all.col[test_mask])), shape=shape)
+    urm_test = urm_test.tocsr()
 
-    while URM_all.shape[0] != URM_train.shape[0] or \
-          URM_all.shape[1] != URM_train.shape[1] or \
-          URM_all.shape[0] != URM_test.shape[0] or \
-          URM_all.shape[1] != URM_test.shape[1]:
-        print('Matrix construction failed, trying another one...')
-        train_mask = np.random.choice([True, False], numInteractions, [train_perc, 1 - train_perc])
-
-        URM_train = sps.coo_matrix((URM_all.data[train_mask], (URM_all.row[train_mask], URM_all.col[train_mask])))
-        URM_train = URM_train.tocsr()
-
-        test_mask = np.logical_not(train_mask)
-
-        URM_test = sps.coo_matrix((URM_all.data[test_mask], (URM_all.row[test_mask], URM_all.col[test_mask])))
-        URM_test = URM_test.tocsr()
-
-    print('Matrix successfully constructed')
-    return URM_train, URM_test
+    return urm_train, urm_test
 
 
 
@@ -266,6 +254,17 @@ def rewrite_train_csv():
         index += 1
 
     new_train_file.close()
+
+
+def gen_k_folds_matrix(URM, n):
+    for i in range(0,n):
+        URM_train, URM_test = utils.train_test_holdout(URM, 0.80)
+        if URM_train.shape[0] == URM.shape[0] and URM_train.shape[1] == URM.shape[1]\
+                and URM_test.shape[0] == URM.shape[0] and URM_test.shape[1] == URM.shape[1]:
+            sps.save_npz("../data/validation_mat/TRAIN_{0}".format(i), URM_train)
+            sps.save_npz("../data/validation_mat/TEST_{0}".format(i), URM_test)
+        else:
+            i = i- 1
 
 
 def new_train_test_holdout(URM_all, train_perc=0.8):

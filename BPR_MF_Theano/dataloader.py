@@ -22,7 +22,7 @@ def LoadRatingFile_HoldKOut(filename, splitter, K):
             arr = line.split(splitter)
             if (len(arr) < 4):
                 continue
-            user, item, time = int(arr[0]), int(arr[1]), long(arr[3]) 
+            user, item, time = int(arr[0]), int(arr[1]), int(arr[3])
             if (len(train) <= user):
                 train.append([])
             train[user].append([item, time])

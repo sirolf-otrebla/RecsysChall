@@ -91,7 +91,7 @@ class GDannunzioEnsemble:
 
         user_profile = self.train.indices[start_pos:end_pos]
 
-        scores[user_profile] = -np.inf
+        scores[user_profile] = -1000000000
 
         return scores
 

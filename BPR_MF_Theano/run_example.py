@@ -5,8 +5,8 @@ An Example to run the MFbpr
 
 @author: hexiangnan
 '''
-from dataloader import LoadRatingFile_HoldKOut
-from MFbpr import MFbpr
+from BPR_MF_Theano.dataloader import LoadRatingFile_HoldKOut
+from BPR_MF_Theano.MFbpr import MFbpr
 import multiprocessing as mp
 
 if __name__ == '__main__':

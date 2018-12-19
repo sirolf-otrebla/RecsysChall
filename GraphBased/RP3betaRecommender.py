@@ -31,7 +31,7 @@ class RP3betaRecommender(SimilarityMatrixRecommender, Recommender):
                                                                                         self.beta, self.min_rating, self.topK,
                                                                                         self.implicit, self.normalize_similarity)
 
-    def fit(self, alpha=1., beta=0.6, min_rating=0, topK=100, implicit=False, normalize_similarity=True):
+    def fit(self, alpha=1., beta=0.3, min_rating=0, topK=100, implicit=True, normalize_similarity=False):
 
         self.alpha = alpha
         self.beta = beta
@@ -145,10 +145,12 @@ class RP3betaRecommender(SimilarityMatrixRecommender, Recommender):
         self.W = sps.csr_matrix((values[:numCells], (rows[:numCells], cols[:numCells])), shape=(Pui.shape[1], Pui.shape[1]))
 
         if self.normalize_similarity:
-            self.W = normalize(self.W, norm='l1', axis=1)
+            self.W = normalize(self.W, norm='l2', axis=1)
 
 
         if self.topK != False:
             self.W_sparse = similarityMatrixTopK(self.W, forceSparseOutput = True, k=self.topK)
             self.sparse_weights = True
+
+        return self.W
 

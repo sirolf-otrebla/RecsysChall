@@ -83,25 +83,26 @@ def evaluate_csv(URM_test, path):
 
     return result_dict
 
-def train_test_holdout(URM_all, train_perc = 0.8):
+def train_test_holdout(urm_all, train_perc=0.8):
 
+    num_interactions = urm_all.nnz
 
-    numInteractions = URM_all.nnz
-    URM_all = URM_all.tocoo()
+    urm_all = urm_all.tocoo()
+    shape = urm_all.shape
 
+    train_mask = np.random.choice([True, False], num_interactions, p=[train_perc, 1-train_perc])
 
-    train_mask = np.random.choice([True,False], numInteractions, [train_perc, 1-train_perc])
-
-
-    URM_train = sps.coo_matrix((URM_all.data[train_mask], (URM_all.row[train_mask], URM_all.col[train_mask])))
-    URM_train = URM_train.tocsr()
+    urm_train = sps.coo_matrix((urm_all.data[train_mask],
+                               (urm_all.row[train_mask], urm_all.col[train_mask])), shape=shape)
+    urm_train = urm_train.tocsr()
 
     test_mask = np.logical_not(train_mask)
 
-    URM_test = sps.coo_matrix((URM_all.data[test_mask], (URM_all.row[test_mask], URM_all.col[test_mask])))
-    URM_test = URM_test.tocsr()
+    urm_test = sps.coo_matrix((urm_all.data[test_mask],
+                              (urm_all.row[test_mask], urm_all.col[test_mask])), shape=shape)
+    urm_test = urm_test.tocsr()
 
-    return URM_train, URM_test
+    return urm_train, urm_test
 
 if __name__ == '__main__':
     URM_text = np.loadtxt('../../data/train.csv', delimiter=',', dtype=int, skiprows=1)

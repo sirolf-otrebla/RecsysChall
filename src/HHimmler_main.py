@@ -1,4 +1,4 @@
-from src.ensembles.BMussoliniEnsemble import BMussoliniEnsemble
+from src.ensembles.HHimmlerEnsemble import HHimmlerEnsemble
 from src.combiners.linearCombiner import linearCombiner
 from refactored_code.utils import load_random_urms, load_icm, evaluate_csv, load_urm, new_train_test_holdout
 import json
@@ -14,7 +14,7 @@ def load_data():
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
     URM = sps.csr_matrix((rating_list, (user_list, item_list)))
-    urm_train, urm_test = load_random_urms(0, 30)
+    urm_train, urm_test = load_random_urms(0, 999)
     icm = load_icm()
     return { "URM_complete" : URM, "URM_test" : urm_test, "URM_train" : urm_train, "ICM" : icm}
 
@@ -26,9 +26,9 @@ def load_parameters(path):
 
 def run_algorithm(data, parameters):
     if MODE == "SUBMIT":
-        recommender = BMussoliniEnsemble(data["URM_complete"], data["URM_test"], icm=data["ICM"], parameters=parameters)
+        recommender = HHimmlerEnsemble(data["URM_complete"], data["URM_test"], icm=data["ICM"], parameters=parameters)
     else:
-        recommender = BMussoliniEnsemble(data["URM_train"], data["URM_test"], icm=data["ICM"], parameters=parameters)
+        recommender = HHimmlerEnsemble(data["URM_train"], data["URM_test"], icm=data["ICM"], parameters=parameters)
     recommender.fit()
     target = pd.read_csv('../data/target_playlists.csv', index_col=False)
     target  = target['playlist_id']
@@ -53,15 +53,15 @@ def run_algorithm(data, parameters):
 def write_results(id, urm_test, dict, data_frame, component_attributes, encoder=None):
     if encoder is None:
         encoder = json.JSONEncoder()
-    filename = "../results/BMussolini/result_{0}.csv".format(id)
+    filename = "../results/HHimmler/result_{0}.csv".format(id)
     data_frame.to_csv(filename, index=None)
     eval = evaluate_csv(urm_test, filename)
     eval_json = encoder.encode(eval)
     param_json = encoder.encode(dict)
-    param_file = open('../results/BMussolini/params_{0}.json'.format(id), mode='w')
+    param_file = open('../results/HHimmler/params_{0}.json'.format(id), mode='w')
     param_file.write(param_json)
     param_file.close()
-    eval_file = open('../results/BMussolini/eval_{0}.json'.format(id), mode='w')
+    eval_file = open('../results/HHimmler/eval_{0}.json'.format(id), mode='w')
     eval_file.write(eval_json)
     eval_file.close()
     return  eval
@@ -72,7 +72,7 @@ def print_info(dict, eval):
 
 def main():
     data = load_data()
-    param_list = load_parameters('./parameters/BMussolini.json')
+    param_list = load_parameters('./parameters/HHimmler.json')
     encoder = json.JSONEncoder()
     i = 0
     for dict in param_list:
@@ -84,5 +84,5 @@ def main():
 
 
 if __name__ == "__main__":
-    MODE = "TEST"
+    MODE = "SUBMIT"
     main()

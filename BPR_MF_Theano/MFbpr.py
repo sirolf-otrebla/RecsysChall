@@ -8,15 +8,13 @@ Steffen Rendle, et al. BPR: Bayesian personalized ranking from implicit feedback
 import numpy as np
 import theano
 import theano.tensor as T
-from sets import Set
-from evaluate import evaluate_model
+from BPR_MF_Theano.evaluate import evaluate_model
 import time
 
 class MFbpr(object):
     '''
     BPR learning for MF model
     '''
-
     def __init__(self, train, test, num_user, num_item, 
                  factors, learning_rate, reg, init_mean, init_stdev):
         '''
@@ -41,9 +39,9 @@ class MFbpr(object):
         # Each element is the set of items for a user, used for negative sampling
         self.items_of_user = []
         self.num_rating = 0     # number of ratings
-        for u in xrange(len(train)):
-            self.items_of_user.append(Set([]))
-            for i in xrange(len(train[u])):
+        for u in range(len(train)):
+            self.items_of_user.append(set([]))
+            for i in range(len(train[u])):
                 item = train[u][i][0]
                 self.items_of_user[u].add(item)
                 self.num_rating += 1
@@ -70,10 +68,10 @@ class MFbpr(object):
         # Training process
         print("Training MF-BPR with: learning_rate=%.2f, regularization=%.4f, factors=%d, #epoch=%d, batch_size=%d."
               %(self.learning_rate, self.reg, self.factors, maxIter, batch_size))
-        for iteration in xrange(maxIter):    
+        for iteration in range(maxIter):
             # Each training epoch
             t1 = time.time()
-            for s in xrange(self.num_rating / batch_size):
+            for s in range(self.num_rating / batch_size):
                 # sample a batch of users, positive samples and negative samples 
                 (users, items_pos, items_neg) = self.get_batch(batch_size)
                 # perform a batched SGD step
@@ -95,7 +93,7 @@ class MFbpr(object):
     
     def get_batch(self, batch_size):
         users, pos_items, neg_items = [], [], []
-        for i in xrange(batch_size):
+        for i in range(batch_size):
             # sample a user
             u = np.random.randint(0, self.num_user)
             # sample a positive item

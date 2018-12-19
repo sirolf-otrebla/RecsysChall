@@ -8,7 +8,7 @@ from old_stuff.new_utils import utils
 
 def gen_k_folds_matrix(URM, n):
     for i in range(0,n):
-        URM_train, URM_test = utils.train_test_holdout(URM, 0.95)
+        URM_train, URM_test = utils.train_test_holdout(URM, 0.80)
         if URM_train.shape[0] == URM.shape[0] and URM_train.shape[1] == URM.shape[1]\
                 and URM_test.shape[0] == URM.shape[0] and URM_test.shape[1] == URM.shape[1]:
             sps.save_npz("../data/validation_mat/TRAIN_{0}".format(i), URM_train)
@@ -23,4 +23,4 @@ if __name__ == '__main__':
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
     URM = sps.csr_matrix((rating_list, (user_list, item_list)))
-    gen_k_folds_matrix(URM, 5000)
+    gen_k_folds_matrix(URM, 500)
