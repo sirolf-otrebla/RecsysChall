@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse as sps
-from scipy.sparse import vstack
+from Base.NonPersonalizedRecommender import TopPop
 import pandas as pd
 import os
 
@@ -129,7 +129,30 @@ def evaluate_csv(URM_test, path):
     return result_dict
 
 
-def load_icm(album_weight=1, artist_weight=1, duration_weight=1):
+class TopPopRecommender(object):
+
+    def fit(self, URM_train):
+        itemPopularity = (URM_train > 0).sum(axis=0)
+        itemPopularity = np.array(itemPopularity).squeeze()
+
+        # We are not interested in sorting the popularity value,
+        # but to order the items according to it
+        self.popularItems = np.argsort(itemPopularity)
+        self.popularItems = np.flip(self.popularItems, axis=0)
+
+    def recommend(self):
+        recommended_items = self.popularItems
+
+        return recommended_items
+
+
+def create_top_pop_list():
+    top_pop = TopPopRecommender()
+    top_pop.fit(load_urm())
+    return top_pop.recommend().tolist()
+
+
+def load_icm(album_weight=1, artist_weight=1, duration_weight=1, top_pop=False, one_hot=True):
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
     ICM_text = np.loadtxt(ROOT_DIR + '/../data/tracks.csv', delimiter=',', skiprows=1, dtype=int)
@@ -169,7 +192,39 @@ def load_icm(album_weight=1, artist_weight=1, duration_weight=1):
 
     ICM_partial = np.concatenate((ICM_album, ICM_artist), axis=1)
 
-    return sps.csr_matrix(np.concatenate((ICM_partial, ICM_duration), axis=1))
+    ICM_partial_duration = np.concatenate((ICM_partial, ICM_duration), axis=1)
+
+    if top_pop:
+        top_pop_list = create_top_pop_list()
+
+        class_matrix = []
+
+        for i in range(0, round(len(tracks_list)/100)):
+            sub_list = []
+            for j in range(0, 100):
+                sub_list.append(top_pop_list.pop(0))
+            class_matrix.append(sub_list)
+
+        sub_list = []
+        for i in top_pop_list:
+            sub_list.append(top_pop_list.pop(0))
+        class_matrix.append(sub_list)
+
+        top_pop_class_list = np.zeros_like(tracks_list)
+
+        class_index = 0
+        for i in class_matrix:
+            for j in i:
+                top_pop_class_list[j] = class_index
+            class_index += 1
+
+        if one_hot:
+            ICM_top_pop = sps.csr_matrix((ratings, (tracks_list, top_pop_class_list)))
+
+    if top_pop:
+        return sps.hstack([sps.csr_matrix(ICM_partial_duration), ICM_top_pop])
+    else:
+        return sps.csr_matrix(ICM_partial_duration)
 
 
 def load_random_urms(min=3, max=9):
