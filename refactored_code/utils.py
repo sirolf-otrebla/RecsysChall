@@ -140,7 +140,7 @@ def create_top_pop_list():
     return top_pop.recommend().tolist()
 
 
-def load_icm(album_weight=1, artist_weight=1, duration_weight=1, top_pop=False, one_hot=True):
+def load_icm(album_weight=1, artist_weight=1, duration_weight=1, top_pop=True, one_hot=True):
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
     ICM_text = np.loadtxt(ROOT_DIR + '/../data/tracks.csv', delimiter=',', skiprows=1, dtype=int)
@@ -187,7 +187,7 @@ def load_icm(album_weight=1, artist_weight=1, duration_weight=1, top_pop=False, 
 
         class_matrix = []
 
-        for i in range(0, round(len(tracks_list)/100)):
+        for i in range(0, round(len(tracks_list)/200)):
             sub_list = []
             for j in range(0, 100):
                 sub_list.append(top_pop_list.pop(0))
