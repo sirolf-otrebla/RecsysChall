@@ -43,6 +43,8 @@ class PureSVDRecommender(Recommender):
 
         print(self.RECOMMENDER_NAME + " Computing SVD decomposition... Done!")
 
+        return self.U, self.VT
+
         # truncatedSVD = TruncatedSVD(n_components = num_factors)
         #
         # truncatedSVD.fit(self.URM_train)

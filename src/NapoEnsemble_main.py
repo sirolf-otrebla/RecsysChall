@@ -1,31 +1,21 @@
-from src.ensembles.NTeslaEnsemble import NTeslaEnsemble
-from src.combiners.probabilisticCombiner import ProbabilisticCombiner
-from refactored_code.utils import load_random_urms, load_icm, evaluate_csv, create_top_pop_list, train_test_holdout
+from src.ensembles.NapoEnsemble import NapoEnsemble
+from src.combiners.linearCombiner import linearCombiner
+from refactored_code.utils import train_test_holdout, load_icm, evaluate_csv, load_urm, new_train_test_holdout
 import json
 import io
 import pandas as pd
 import numpy as np
-from scipy import sparse as sps #180344
+from scipy import sparse as sps
 import gc
 
-POPULARITY_SCALING_EXP = 0 #0.1344
 MODE = "TEST"
 def load_data():
     URM_text = np.loadtxt('../data/train.csv', delimiter=',', dtype=int, skiprows=1)
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
     URM = sps.csr_matrix((rating_list, (user_list, item_list)))
-    urm_train, urm_test = train_test_holdout(urm_all=URM)
-    topPop = create_top_pop_list()
-    urm_train.tocoo()
-    j = 0
-    for i in topPop:
-        # factor = (len(topPop)-j)**POPULARITY_SCALING_EXP
-        factor = (j)**POPULARITY_SCALING_EXP
-        urm_train[:,i].multiply(1/(1+factor))
-        j += 1
-    urm_train.tocsr()
-    icm = load_icm()
+    urm_train, urm_test = train_test_holdout(URM)
+    icm = load_icm(top_pop=True)
     return { "URM_complete" : URM, "URM_test" : urm_test, "URM_train" : urm_train, "ICM" : icm}
 
 def load_parameters(path):
@@ -36,13 +26,13 @@ def load_parameters(path):
 
 def run_algorithm(data, parameters):
     if MODE == "SUBMIT":
-        recommender = NTeslaEnsemble(data["URM_complete"], data["URM_test"], icm=data["ICM"], parameters=parameters)
+        recommender = NapoEnsemble(data["URM_complete"], data["URM_test"], icm=data["ICM"])
     else:
-        recommender = NTeslaEnsemble(data["URM_train"], data["URM_test"], icm=data["ICM"], parameters=parameters)
+        recommender = NapoEnsemble(data["URM_train"], data["URM_test"], icm=data["ICM"])
     recommender.fit()
     target = pd.read_csv('../data/target_playlists.csv', index_col=False)
     target  = target['playlist_id']
-    recommended = recommender.recommend_batch(user_list=target, combiner=ProbabilisticCombiner())
+    recommended = recommender.recommend_batch(user_list=target, combiner=linearCombiner())
     playlists = recommended[:, 0]
     recommended = np.delete(recommended, 0, 1)
     i = 0
@@ -63,15 +53,19 @@ def run_algorithm(data, parameters):
 def write_results(id, urm_test, dict, data_frame, component_attributes, encoder=None):
     if encoder is None:
         encoder = json.JSONEncoder()
-    filename = "../results/NTesla/result_{0}.csv".format(id)
+    filename = "../results/NapoEnsemble/result_{0}.csv".format(id)
     data_frame.to_csv(filename, index=None)
     eval = evaluate_csv(urm_test, filename)
     eval_json = encoder.encode(eval)
     param_json = encoder.encode(dict)
-    param_file = open('../results/NTesla/params_{0}.json'.format(id), mode='w')
+    param_file = open('../results/NapoEnsemble/params_{0}.json'.format(id), mode='w')
     param_file.write(param_json)
     param_file.close()
-    eval_file = open('../results/NTesla/eval_{0}.json'.format(id), mode='w')
+    param_attributes_json = encoder.encode(component_attributes)
+    param_attributes_file = open('../results/NapoEnsemble/param_attributes_{0}.json'.format(id), mode='w')
+    param_attributes_file.write(param_attributes_json)
+    param_attributes_file.close()
+    eval_file = open('../results/NapoEnsemble/eval_{0}.json'.format(id), mode='w')
     eval_file.write(eval_json)
     eval_file.close()
     return  eval
@@ -82,7 +76,7 @@ def print_info(dict, eval):
 
 def main():
     data = load_data()
-    param_list = load_parameters('./parameters/NTesla.json')
+    param_list = [1]
     encoder = json.JSONEncoder()
     i = 0
     for dict in param_list:
@@ -96,5 +90,3 @@ def main():
 if __name__ == "__main__":
     MODE = "TEST"
     main()
-
-
