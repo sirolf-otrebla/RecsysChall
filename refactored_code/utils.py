@@ -313,7 +313,7 @@ def rewrite_train_csv():
 
 def gen_k_folds_matrix(URM, n):
     for i in range(0,n):
-        URM_train, URM_test = utils.train_test_holdout(URM, 0.80)
+        URM_train, URM_test = train_test_holdout(URM, 0.80)
         if URM_train.shape[0] == URM.shape[0] and URM_train.shape[1] == URM.shape[1]\
                 and URM_test.shape[0] == URM.shape[0] and URM_test.shape[1] == URM.shape[1]:
             sps.save_npz("../data/validation_mat/TRAIN_{0}".format(i), URM_train)

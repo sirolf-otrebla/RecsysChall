@@ -46,7 +46,7 @@ class NTeslaEnsemble:
 
     def fit(self):
         self.bm_recommender.fit()
-        self.item_bpr_w = self.item_bpr_recommender.fit(epochs=10, topK=200, batch_size=200, sgd_mode='adagrad', learning_rate=1e-2)
+        self.item_bpr_w = self.item_bpr_recommender.fit(epochs=15, topK=200, batch_size=200, sgd_mode='adagrad', learning_rate=1e-2)
         self.user_bpr_w = self.user_bpr_recommender.fit(epochs=10, topK=200, batch_size=200, sgd_mode='adagrad', learning_rate=1e-2)
 
     def recommend(self, user_id, combiner, at=10):

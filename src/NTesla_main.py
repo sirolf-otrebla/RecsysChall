@@ -8,7 +8,7 @@ import numpy as np
 from scipy import sparse as sps #180344
 import gc
 
-POPULARITY_SCALING_EXP = 0.190344
+POPULARITY_SCALING_EXP = 0 #0.1344
 MODE = "TEST"
 def load_data():
     URM_text = np.loadtxt('../data/train.csv', delimiter=',', dtype=int, skiprows=1)
@@ -20,8 +20,9 @@ def load_data():
     urm_train.tocoo()
     j = 0
     for i in topPop:
-        factor = (len(topPop)-j)**POPULARITY_SCALING_EXP
-        urm_train[:,i].multiply(1/factor)
+        # factor = (len(topPop)-j)**POPULARITY_SCALING_EXP
+        factor = (j)**POPULARITY_SCALING_EXP
+        urm_train[:,i].multiply(1/(1+factor))
         j += 1
     urm_train.tocsr()
     icm = load_icm()
@@ -93,5 +94,7 @@ def main():
 
 
 if __name__ == "__main__":
-    MODE = "SUBMIT"
+    MODE = "TEST"
     main()
+
+
