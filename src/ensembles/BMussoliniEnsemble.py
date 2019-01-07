@@ -10,6 +10,7 @@ from implicit.bpr import BayesianPersonalizedRanking as BPR_matrix_factorization
 from sklearn import preprocessing
 import numpy as np
 
+POPULARITY_SCALING_EXP = .1353
 
 
 class BMussoliniEnsemble:
@@ -35,11 +36,14 @@ class BMussoliniEnsemble:
         self.train = urm_train.tocsr()
         self.test = urm_test.tocsr()
         self.icm = icm.tocsr()
+        self.sequential_playlists = None
 
         self.initialize_components()
 
 
     def initialize_components(self):
+
+        self.train = self.rescale_wrt_insertion_order(self.train)
 
         self.item_cosineCF_recommender = Cosine_Similarity(self.train, topK=200, shrink=15, normalize=True, mode='cosine')
         self.user_cosineCF_recommender = Cosine_Similarity(self.train.T, topK=200, shrink=15, normalize=True, mode='cosine')
@@ -100,8 +104,19 @@ class BMussoliniEnsemble:
         for r in scores:
             self.filter_seen(user_id, r[0])
 
-        return combiner.combine(scores, at)
+        R = combiner.combine(scores, at)
+        return R
 
+    def rescale_wrt_insertion_order(self, R):
+        R = R.copy()
+        for i in self.sequential_playlists:
+            pl = i["playlist"]
+            k = 0
+            for j in i["songs"]:
+                factor = 1/1+(k**POPULARITY_SCALING_EXP)
+                R[i, j] = factor*R[i,j]
+
+        return R
     def filter_seen(self, user_id, scores):
 
         start_pos = int(self.train.indptr[user_id])
