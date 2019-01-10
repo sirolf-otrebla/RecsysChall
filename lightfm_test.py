@@ -7,15 +7,18 @@ import pandas as pd
 
 class LightFM_Recommender:
 
-    def __init__(self, train):
+    def __init__(self, train, icm, no_components=10, k=5, n=10, item_alpha=0.0, user_alpha=0.0, loss='warp',
+                 learning_rate=0.05, rho=0.95, epsilon=1e-6, max_sampled=10, learning_schedule='adagrad'):
         self.train = train
-        self.icm = load_icm()
-        self.model = LightFM(loss='warp', k=5, n=10, item_alpha=0, user_alpha=0)
+        self.icm = icm
+        self.model = LightFM(loss=loss, k=k, n=n, item_alpha=item_alpha, user_alpha=user_alpha,
+                             no_components=no_components, learning_rate=learning_rate, rho=rho,
+                             epsilon=epsilon, max_sampled=max_sampled, learning_schedule=learning_schedule)
 
         self.pid_array = np.arange(train.shape[1], dtype=np.int32)
 
-    def fit(self):
-        self.model.fit(epochs=300, interactions=self.train, item_features=self.icm, verbose=True)
+    def fit(self, epochs):
+        self.model.fit(epochs=epochs, interactions=self.train, item_features=self.icm, verbose=True)
 
     def filter_seen(self, user_id, scores):
 
@@ -26,6 +29,9 @@ class LightFM_Recommender:
 
         scores[user_profile] = -1000000 #-np.inf
         return scores
+
+    def scores(self, user_id):
+        return self.model.predict(user_id, self.pid_array, item_features=self.icm)
 
     def recommend(self, user_id, at=10):
         scores = self.model.predict(user_id, self.pid_array, item_features=self.icm)
@@ -64,10 +70,10 @@ def before():
 
 if __name__ == '__main__':
     train, test = train_test_holdout(load_urm())
-    recsys = LightFM_Recommender(load_urm())
+    recsys = LightFM_Recommender(train, load_icm(), 200)
     target = pd.read_csv('./data/target_playlists.csv', index_col=False)
 
-    recsys.fit()
+    recsys.fit(epochs=100)
 
     recommended = recsys.recommendALL(target.values)
 

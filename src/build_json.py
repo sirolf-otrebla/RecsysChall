@@ -12,6 +12,7 @@ IRP3B = [16]                        #0.87
 URP3B = [0]                         #
 alpha = [1]
 SVD = [20]
+FM = [0.02, 0.05, 0.1, 0.2]
 
 arr = []
 
@@ -27,7 +28,8 @@ for s in SVD:
                                     for k in IRP3B:
                                         for l in URP3B:
                                             for m in alpha:
-                                                arr.append({
+                                                for z in FM:
+                                                    arr.append({
                                     "USER_CF" : d,
                                     "USER_BPR" : f,
                                     "ITEM_CF" : c,
@@ -39,12 +41,13 @@ for s in SVD:
                                     "ITEM_RP3B": k,
                                     "USER_RP3B" : l,
                                     'ALPHA' : m,
-                                    "SVD": s
+                                    "SVD": s,
+                                    "FM": z
                                 })
 encoder = json.JSONEncoder()
 
 
 json = encoder.encode(arr)
-file = open("./parameters/NTesla.json", mode='w')
+file = open("./parameters/BMussolini.json", mode='w')
 file.write(json)
 file.close()

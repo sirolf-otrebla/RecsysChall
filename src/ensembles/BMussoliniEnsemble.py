@@ -10,6 +10,7 @@ from implicit.bpr import BayesianPersonalizedRanking as BPR_matrix_factorization
 from sklearn import preprocessing
 import numpy as np
 import src.load_train_sequential as load_sequential
+from lightfm_test import LightFM_Recommender
 
 POPULARITY_SCALING_EXP = .0353
 
@@ -29,8 +30,8 @@ class BMussoliniEnsemble:
                 "CBF_BPR" : 64,
                 "BPR_MF": 6,
                 "ITEM_RP3B": 16,
-                "USER_RP3B": 0
-
+                "USER_RP3B": 0,
+                "FM": 10
             }
 
         self.ensemble_weights = parameters
@@ -55,6 +56,7 @@ class BMussoliniEnsemble:
         self.user_rp3b_recommender = RP3betaRecommender(self.train.T)
         self.bpr_mf = BPR_matrix_factorization(factors=800, regularization=0.01, learning_rate=0.01, iterations=300)
         self.ials_cg_mf = IALS_CG(iterations=15, calculate_training_loss=True, factors=500, use_cg=True, regularization=1e-3)
+        self.lightfm = LightFM_Recommender(self.train, self.icm, no_components=200)
 
     def fit(self):
 
@@ -73,6 +75,7 @@ class BMussoliniEnsemble:
         self.bpr_mf.fit(self.train.T.tocoo())
         self.bpr_mf_latent_x = self.bpr_mf.user_factors.copy()
         self.bpr_mf_latent_y = self.bpr_mf.item_factors.copy()
+        self.lightfm.fit(100)
 
 
     def recommend(self, user_id, combiner, at=10):
@@ -87,6 +90,7 @@ class BMussoliniEnsemble:
         bpr_mf_r = np.dot(self.bpr_mf_latent_x[user_id], self.bpr_mf_latent_y.T).ravel()
         item_rp3b_r = user_profile.dot(self.item_rp3b_w).toarray().ravel()
         user_rp3b_r = self.user_rp3b_w[user_id].dot(self.train).toarray().ravel()
+        lightfm_r = self.lightfm.scores(user_id)
 
         scores = [
             # [item_bpr_r, self.ensemble_weights["ITEM_BPR"], "ITEM_BPR" ],
@@ -100,6 +104,7 @@ class BMussoliniEnsemble:
             [bpr_mf_r, self.ensemble_weights["BPR_MF"], "BPR_MF"],
             [item_rp3b_r, self.ensemble_weights["ITEM_RP3B"], "ITEM_RP3B"],
             [user_rp3b_r, self.ensemble_weights["USER_RP3B"], "USER_RP3B"],
+            [lightfm_r, self.ensemble_weights["FM"], "FM"]
             ]
 
         for r in scores:
