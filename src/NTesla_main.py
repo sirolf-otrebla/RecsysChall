@@ -94,7 +94,7 @@ def main():
 
 
 if __name__ == "__main__":
-    MODE = "TEST"
+    MODE = "SUBMIT"
     main()
 
 

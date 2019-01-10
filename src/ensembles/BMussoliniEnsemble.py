@@ -9,8 +9,9 @@ from SLIM_BPR.Cython.SLIM_BPR_Cython import SLIM_BPR_Cython
 from implicit.bpr import BayesianPersonalizedRanking as BPR_matrix_factorization
 from sklearn import preprocessing
 import numpy as np
+import src.load_train_sequential as load_sequential
 
-POPULARITY_SCALING_EXP = .1353
+POPULARITY_SCALING_EXP = .0353
 
 
 class BMussoliniEnsemble:
@@ -37,7 +38,7 @@ class BMussoliniEnsemble:
         self.test = urm_test.tocsr()
         self.icm = icm.tocsr()
         self.sequential_playlists = None
-
+        self.sequential_playlists = load_sequential.load_train_sequential()
         self.initialize_components()
 
 
@@ -109,13 +110,16 @@ class BMussoliniEnsemble:
 
     def rescale_wrt_insertion_order(self, R):
         R = R.copy()
+        R = R.tolil()
+        R = R*0.8
         for i in self.sequential_playlists:
-            pl = i["playlist"]
-            k = 0
+            pl = i["id"]
+            k = 1
             for j in i["songs"]:
-                factor = 1/1+(k**POPULARITY_SCALING_EXP)
-                R[i, j] = factor*R[i,j]
-
+                factor = 1/(k**POPULARITY_SCALING_EXP)
+                R[pl, j] = factor*(R[pl,j] + 0.2)
+                k += 1
+        R = R.tocsr()
         return R
     def filter_seen(self, user_id, scores):
 

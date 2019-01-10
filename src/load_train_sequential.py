@@ -27,4 +27,8 @@ def load_train_sequential():
             temp_data = []
             temp_data.append(train_sequential_songs.__getitem__(i))
 
+    dictionary['id'] = last_index
+    dictionary['songs'] = temp_data
+    matrix.append(dictionary.copy())
+
     return matrix

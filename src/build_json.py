@@ -10,8 +10,8 @@ IALS=   [26]                        #[14]
 BPRM =  [6]
 IRP3B = [16]                        #0.87
 URP3B = [0]                         #
-alpha = [0.95]
-SVD = [10]
+alpha = [1]
+SVD = [20]
 
 arr = []
 
@@ -45,6 +45,6 @@ encoder = json.JSONEncoder()
 
 
 json = encoder.encode(arr)
-file = open("./parameters/AVolta.json", mode='w')
+file = open("./parameters/NTesla.json", mode='w')
 file.write(json)
 file.close()
