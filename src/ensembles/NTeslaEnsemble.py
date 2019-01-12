@@ -40,8 +40,8 @@ class NTeslaEnsemble:
     def initialize_components(self):
         self.bm_recommender = BMussoliniEnsemble(urm_train=self.train, urm_test=self.test,
                                                  icm=self.icm, parameters=self.ensemble_weights)
-        self.item_bpr_recommender = SLIM_BPR_Cython(self.train, positive_threshold=0)
-        self.user_bpr_recommender = SLIM_BPR_Cython(self.train.T, positive_threshold=0)
+        self.item_bpr_recommender = SLIM_BPR_Cython(self.train, positive_threshold=0.1)
+        self.user_bpr_recommender = SLIM_BPR_Cython(self.train.T, positive_threshold=0.1)
 
 
     def fit(self):
@@ -53,8 +53,10 @@ class NTeslaEnsemble:
         user_profile = self.train[user_id, :]
 
         bm_list = self.bm_recommender.recommend(user_id, linearCombiner(), at=40)
-        item_bpr_r = preprocessing.normalize(user_profile.dot(self.item_bpr_w).toarray(), norm='l2').ravel()
-        user_bpr_r = preprocessing.normalize(self.user_bpr_w[user_id].dot(self.train).toarray(), norm='l2').ravel()
+        item_bpr_r = user_profile.dot(self.item_bpr_w).toarray()
+        user_bpr_r = self.user_bpr_w[user_id].dot(self.train).toarray()
+        # item_bpr_r = preprocessing.normalize(user_profile.dot(self.item_bpr_w).toarray(), norm='l2').ravel()
+        # user_bpr_r = preprocessing.normalize(self.user_bpr_w[user_id].dot(self.train).toarray(), norm='l2').ravel()
 
         bpr_scores = [
             [item_bpr_r, self.ensemble_weights["ITEM_BPR"], "ITEM_BPR"],
