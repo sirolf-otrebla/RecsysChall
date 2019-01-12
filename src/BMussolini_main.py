@@ -1,6 +1,6 @@
 from src.ensembles.BMussoliniEnsemble import BMussoliniEnsemble
 from src.combiners.linearCombiner import linearCombiner
-from refactored_code.utils import load_random_urms, load_icm, evaluate_csv, load_urm, new_train_test_holdout
+from refactored_code.utils import load_random_urms, load_icm, evaluate_csv, load_urm, new_train_test_holdout, train_test_holdout
 import json
 import io
 import pandas as pd
@@ -14,7 +14,7 @@ def load_data():
     user_list, item_list = zip(*URM_text)
     rating_list = np.ones(len(user_list))
     URM = sps.csr_matrix((rating_list, (user_list, item_list)))
-    urm_train, urm_test = load_random_urms(0, 30)
+    urm_train, urm_test = train_test_holdout(URM)
     icm = load_icm()
     return { "URM_complete" : URM, "URM_test" : urm_test, "URM_train" : urm_train, "ICM" : icm}
 
