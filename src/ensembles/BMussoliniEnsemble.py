@@ -64,7 +64,7 @@ class BMussoliniEnsemble:
         self.bpr_mf.fit(self.train.T.tocoo())
         self.bpr_mf_latent_x = self.bpr_mf.user_factors.copy()
         self.bpr_mf_latent_y = self.bpr_mf.item_factors.copy()
-        self.fm.fit(self.train, item_features=self.icm, epochs=100, verbose=True)
+        self.fm.fit(self.train, item_features=self.icm, epochs=50, verbose=True)
 
     def recommend(self, user_id, combiner, at=10):
         user_profile = self.train[user_id, :]
