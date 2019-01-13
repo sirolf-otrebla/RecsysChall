@@ -132,8 +132,9 @@ class P3alphaRecommender(SimilarityMatrixRecommender, Recommender):
 
                 start_time_printBatch = time.time()
 
-        self.W_sparse = sps.csr_matrix((values[:numCells], (rows[:numCells], cols[:numCells])), shape=(Pui.shape[1], Pui.shape[1]))
+        self.W = sps.csr_matrix((values[:numCells], (rows[:numCells], cols[:numCells])), shape=(Pui.shape[1], Pui.shape[1]))
 
+        return self.W
 
         if self.normalize_similarity:
             self.W_sparse = normalize(self.W_sparse, norm='l1', axis=1)
